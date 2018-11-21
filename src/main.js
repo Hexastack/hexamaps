@@ -1,11 +1,8 @@
 import Vue from 'vue'
-import Resource from 'vue-resource'
-import App from './App.vue'
+import index from '../examples/Choropleth/Index.vue'
 
 Vue.config.productionTip = false
 
-Vue.use(Resource)
-
 new Vue({
-  render: h => h(App),
+  render: h => h(index),
 }).$mount('#app')

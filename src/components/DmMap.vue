@@ -82,11 +82,15 @@ export default {
       this.height = this.$el.offsetHeight
     },
     load () {
-      this.$http.get(this.source)
-        .then(res => {
-          this.world = res.body
-          this.countries = res.body.objects
-        }, err => {
+      fetch(this.source)
+        .then(response => {
+          return response.json()
+        })
+        .then(json => {
+          this.world = json
+          this.countries = json.objects
+        })
+        .catch(err => {
           console.error(err)
         })
     },
