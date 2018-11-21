@@ -6,8 +6,8 @@
     >
       <g class="dm-countries" :transform="transform">
         <dm-country
-          v-for="country in countries"
-          :key="country.properties.NAME"
+          v-for="(country, index) in countries"
+          :key="country.properties.id || country.properties.NAME || index"
           :data="country"
           :d="topo(world, country)"
         />
@@ -25,13 +25,18 @@ export default {
   components: {
     DmCountry
   },
+  props: {
+    source: {
+      type: String,
+      default: '/topos/world110m.json'
+    }
+  },
   data () {
     return {
       width: 800,
       height: 600,
       panning: false,
       zooming: false,
-      source: '/topos/110m.json',
       countries: [],
       geoPath: function () { return '' },
       scale: 1,
@@ -55,7 +60,7 @@ export default {
       this.$http.get(this.source)
         .then(res => {
           this.world = res.body
-          this.countries = res.body.objects.countries.geometries
+          this.countries = res.body.objects
         }, err => {
           console.error(err)
         })

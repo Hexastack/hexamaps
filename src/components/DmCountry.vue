@@ -16,6 +16,10 @@ export default {
     d: {
       type: String,
       default: ''
+    },
+    data: {
+      type: Object,
+      default () {return {}}
     }
   },
   data () {
