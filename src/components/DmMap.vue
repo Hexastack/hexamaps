@@ -8,8 +8,11 @@
         <dm-country
           v-for="(country, index) in countries"
           :key="country.properties.id || country.properties.NAME || index"
-          :data="country"
+          :data="stachData(country)"
           :d="topo(world, country)"
+          :countryOnClick="countryOnClick"
+          :countryOnHover="countryOnHover"
+          :countryOnMount="countryOnMount"
         />
       </g>
     </svg>
@@ -26,9 +29,31 @@ export default {
     DmCountry
   },
   props: {
+    // Static props
     source: {
       type: String,
       default: '/topos/world110m.json'
+    },
+    data: {
+      type: Array,
+      default () { return []}
+    },
+    // Handlers
+    countryOnClick: {
+      type: Function,
+      default: function (e, country) { }
+    },
+    countryOnHover: {
+      type: Function,
+      default: function (e, country) { }
+    },
+    countryOnMount: {
+      type: Function,
+      default: function (country) { }
+    },
+    attachData: {
+      type: Function,
+      default: function (country) { return null}
     }
   },
   data () {
@@ -67,6 +92,10 @@ export default {
     },
     topo (world, country) {
       return this.geoPath(mesh(world, country))
+    },
+    stachData (country) {
+      country.userData = this.attachData(country)
+      return country
     }
   },
   computed: {
