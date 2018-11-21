@@ -8,6 +8,11 @@
     "bundle": "vue-cli-service build --target lib --name DotMap ./src/index.js",
     "lint": "vue-cli-service lint"
   },
+  "main": "./dist/DotMap.umd.min.js",
+  "files": [
+    "dist/*",
+    "src/*"
+  ],
   "dependencies": {
     "d3-geo": "^1.11.1",
     "topojson": "^3.0.2",
