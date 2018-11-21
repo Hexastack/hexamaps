@@ -11,7 +11,9 @@
   "main": "./dist/DotMap.umd.min.js",
   "files": [
     "dist/*",
-    "src/*"
+    "src/*",
+    "*.json",
+    "*.js"
   ],
   "dependencies": {
     "d3-geo": "^1.11.1",
