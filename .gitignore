@@ -8,6 +8,7 @@ node_modules
 
 # map sources
 public/topos
+public/data
 
 # no lock for now
 yarn.lock

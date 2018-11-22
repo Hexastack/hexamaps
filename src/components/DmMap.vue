@@ -13,6 +13,8 @@
           :countryOnClick="countryOnClick"
           :countryOnHover="countryOnHover"
           :countryOnMount="countryOnMount"
+          :countryDrawLand="countryDrawLand"
+          :countryDrawBorder="countryDrawBorder"
         />
       </g>
     </svg>
@@ -28,16 +30,18 @@ export default {
   components: {
     DmCountry
   },
+  inject: {
+    map: {
+      type: Object,
+      default () {
+        return {
+          data: [],
+          source: '/topos/world110m.json'
+        }
+      }
+    }
+  },
   props: {
-    // Static props
-    source: {
-      type: String,
-      default: '/topos/world110m.json'
-    },
-    data: {
-      type: Array,
-      default () { return []}
-    },
     // Handlers
     countryOnClick: {
       type: Function,
@@ -54,6 +58,15 @@ export default {
     attachData: {
       type: Function,
       default: function (country) { return null}
+    },
+    // Renderer
+    countryDrawLand: {
+      type: Function,
+      default: function (country) { return this.land }
+    },
+    countryDrawBorder: {
+      type: Function,
+      default: function (country) { return this.border }
     }
   },
   data () {
@@ -82,7 +95,7 @@ export default {
       this.height = this.$el.offsetHeight
     },
     load () {
-      fetch(this.source)
+      fetch(this.map.source)
         .then(response => {
           return response.json()
         })

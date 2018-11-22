@@ -1,12 +1,8 @@
 <template>
   <div class="dm-choropleth">
     <dm-map
-      :source="source"
-      :data="data"
-      :countryOnClick="countryOnClick"
-      :countryOnHover="countryOnHover"
-      :countryOnMount="countryOnMount"
       :attachData="attachData"
+      :countryDrawLand="countryDrawLand"
     />
   </div>
 </template>
@@ -20,45 +16,37 @@ export default {
   components: {
     DmMap
   },
+  inject: {
+    map: {
+      type: Object,
+      default () {
+        return {
+          data: [],
+          source: '/topos/world110m.json'
+        }
+      }
+    }
+  },
   props: {
-    source: {
-      type: String,
-      default: '/topos/world110m.json'
-    },
-    data: {
-      type: Array,
-      default () { return []}
-    },
     descriminator: {
       type: String,
       default: 'ISO_A2'
     }
   },
   methods: {
-    countryOnClick (e, country) {
-      for (let d in country.data.properties) {
-        console.log(d, country.data.properties[d])
-      } 
-      country.land = '#cc0044'
-      return country
-    },
-    countryOnHover (e, country) {
-      country.land = '#0000c4'
-      return country
-    },
-    countryOnMount (country) {
+    countryDrawLand (country) {
       if (country.data.userData && country.data.userData.value) {
-        country.land = interpolateOranges(this.scale(country.data.userData.value))
+        return interpolateOranges(this.scale(country.data.userData.value))
       }
-      return country
+      return country.land
     },
     attachData (country) {
-      return this.data.find(d => d.name === country.properties[this.descriminator])
+      return this.map.data.find(d => d.name === country.properties[this.descriminator])
     }
   },
   computed: {
     scale () {
-      return scaleLinear().domain([Math.min(...this.data.map(d => d.value)), Math.max(...this.data.map(d => d.value))])
+      return scaleLinear().domain([Math.min(...this.map.data.map(d => d.value)), Math.max(...this.map.data.map(d => d.value))])
     }
   }
 }

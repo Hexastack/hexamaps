@@ -5,8 +5,8 @@
       @click="click"
       @mouseover="hover"
       :d="d"
-      :fill="land"
-      :stroke="border"
+      :fill="fill"
+      :stroke="stroke"
     />
   </g>
 </template>
@@ -37,6 +37,15 @@ export default {
     countryOnMount: {
       type: Function,
       default: function (country) { }
+    },
+    // Renderer
+    countryDrawLand: {
+      type: Function,
+      default: function (country) { return this.land }
+    },
+    countryDrawBorder: {
+      type: Function,
+      default: function (country) { return this.border }
     }
   },
   data () {
@@ -49,7 +58,7 @@ export default {
       angle: 0
     }
   },
-  mounted () {
+  created () {
     this.expose = new Expose({
       data: this.data,
       land: this.land,
@@ -75,6 +84,12 @@ export default {
   computed: {
     transform () {
       return `translate(${this.x}, ${this.y}) scale(${this.scale}) rotate(${this.angle})`
+    },
+    fill () {
+     return this.countryDrawLand(this.expose.wrap())
+    },
+    stroke () {
+      return this.countryDrawBorder(this.expose.wrap())
     }
   }
 }
