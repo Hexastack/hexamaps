@@ -23,7 +23,7 @@ export default {
   border: #000 solid 1px;
   background-color:#4499bb;
 }
-.dm-country {
+.dm-entity {
   stroke: #537700;
 }
 </style>

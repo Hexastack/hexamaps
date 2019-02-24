@@ -2,7 +2,7 @@
   <div class="dm-choropleth">
     <dm-map
       :attachData="attachData"
-      :countryDrawLand="countryDrawLand"
+      :entityDrawLand="entityDrawLand"
     />
   </div>
 </template>
@@ -34,14 +34,14 @@ export default {
     }
   },
   methods: {
-    countryDrawLand (country) {
-      if (country.data.userData && country.data.userData.value) {
-        return interpolateOranges(this.scale(country.data.userData.value))
+    entityDrawLand (entity) {
+      if (entity.data.userData && entity.data.userData.value) {
+        return interpolateOranges(this.scale(entity.data.userData.value))
       }
-      return country.land
+      return entity.land
     },
-    attachData (country) {
-      return this.map.data.find(d => d.name === country.properties[this.descriminator])
+    attachData (entity) {
+      return this.map.data.find(d => d.name === entity.properties[this.descriminator])
     }
   },
   computed: {

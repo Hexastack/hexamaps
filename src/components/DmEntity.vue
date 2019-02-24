@@ -1,7 +1,7 @@
 <template>
-  <g class="dm-country-box" :transform="transform">
+  <g class="dm-entity-box" :transform="transform">
     <path
-      class="dm-country"
+      class="dm-entity"
       @click="click"
       @mouseover="hover"
       :d="d"
@@ -14,7 +14,7 @@
 <script>
 import Expose from '../lib/warpExpose'
 export default {
-  name: 'DmCountry',
+  name: 'DmEntity',
   props: {
     // Static props
     d: {
@@ -26,26 +26,26 @@ export default {
       default () {return {}}
     },
     // Handlers
-    countryOnClick: {
+    entityOnClick: {
       type: Function,
-      default: function (e, country) { }
+      default: function (e, entity) { }
     },
-    countryOnHover: {
+    entityOnHover: {
       type: Function,
-      default: function (e, country) { }
+      default: function (e, entity) { }
     },
-    countryOnMount: {
+    entityOnMount: {
       type: Function,
-      default: function (country) { }
+      default: function (entity) { }
     },
     // Renderer
-    countryDrawLand: {
+    entityDrawLand: {
       type: Function,
-      default: function (country) { return this.land }
+      default: function (entity) { return this.land }
     },
-    countryDrawBorder: {
+    entityDrawBorder: {
       type: Function,
-      default: function (country) { return this.border }
+      default: function (entity) { return this.border }
     }
   },
   data () {
@@ -72,13 +72,13 @@ export default {
   },
   methods: {
     click (e) {
-      this.expose.unwrap(this.countryOnClick(e, this.expose.wrap()))
+      this.expose.unwrap(this.entityOnClick(e, this.expose.wrap()))
     },
     hover (e) {
-      this.expose.unwrap(this.countryOnHover(e, this.expose.wrap()))
+      this.expose.unwrap(this.entityOnHover(e, this.expose.wrap()))
     },
     mount () {
-      this.expose.unwrap(this.countryOnMount(this.expose.wrap()))
+      this.expose.unwrap(this.entityOnMount(this.expose.wrap()))
     }
   },
   computed: {
@@ -86,10 +86,10 @@ export default {
       return `translate(${this.x}, ${this.y}) scale(${this.scale}) rotate(${this.angle})`
     },
     fill () {
-     return this.countryDrawLand(this.expose.wrap())
+     return this.entityDrawLand(this.expose.wrap())
     },
     stroke () {
-      return this.countryDrawBorder(this.expose.wrap())
+      return this.entityDrawBorder(this.expose.wrap())
     }
   }
 }

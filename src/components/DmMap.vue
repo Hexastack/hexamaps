@@ -5,16 +5,16 @@
       :style="style"
     >
       <g class="dm-countries" :transform="transform">
-        <dm-country
-          v-for="(country, index) in countries"
-          :key="country.properties.id || country.properties.NAME || index"
-          :data="stachData(country)"
-          :d="topo(world, country)"
-          :countryOnClick="countryOnClick"
-          :countryOnHover="countryOnHover"
-          :countryOnMount="countryOnMount"
-          :countryDrawLand="countryDrawLand"
-          :countryDrawBorder="countryDrawBorder"
+        <dm-entity
+          v-for="(entity, index) in countries"
+          :key="entity.properties.id || entity.properties.NAME || index"
+          :data="stachData(entity)"
+          :d="topo(world, entity)"
+          :entityOnClick="entityOnClick"
+          :entityOnHover="entityOnHover"
+          :entityOnMount="entityOnMount"
+          :entityDrawLand="entityDrawLand"
+          :entityDrawBorder="entityDrawBorder"
         />
       </g>
     </svg>
@@ -22,13 +22,13 @@
 </template>
 
 <script>
-import DmCountry from './DmCountry'
+import DmEntity from './DmEntity'
 import { geoPath, geoMercator } from 'd3-geo'
 import { mesh } from 'topojson'
 export default {
   name: 'DmMap',
   components: {
-    DmCountry
+    DmEntity
   },
   inject: {
     map: {
@@ -43,30 +43,30 @@ export default {
   },
   props: {
     // Handlers
-    countryOnClick: {
+    entityOnClick: {
       type: Function,
-      default: function (e, country) { }
+      default: function (e, entity) { }
     },
-    countryOnHover: {
+    entityOnHover: {
       type: Function,
-      default: function (e, country) { }
+      default: function (e, entity) { }
     },
-    countryOnMount: {
+    entityOnMount: {
       type: Function,
-      default: function (country) { }
+      default: function (entity) { }
     },
     attachData: {
       type: Function,
-      default: function (country) { return null}
+      default: function (entity) { return null}
     },
     // Renderer
-    countryDrawLand: {
+    entityDrawLand: {
       type: Function,
-      default: function (country) { return this.land }
+      default: function (entity) { return this.land }
     },
-    countryDrawBorder: {
+    entityDrawBorder: {
       type: Function,
-      default: function (country) { return this.border }
+      default: function (entity) { return this.border }
     }
   },
   data () {
@@ -107,12 +107,12 @@ export default {
           console.error(err)
         })
     },
-    topo (world, country) {
-      return this.geoPath(mesh(world, country))
+    topo (world, entity) {
+      return this.geoPath(mesh(world, entity))
     },
-    stachData (country) {
-      country.userData = this.attachData(country)
-      return country
+    stachData (entity) {
+      entity.userData = this.attachData(entity)
+      return entity
     }
   },
   computed: {

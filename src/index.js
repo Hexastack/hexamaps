@@ -1,7 +1,7 @@
 import DmMap from '@/components/DmMap'
-import DmCountry from '@/components/DmCountry'
+import DmEntity from '@/components/DmEntity'
 
 export {
   DmMap,
-  DmCountry
+  DmEntity
 }
