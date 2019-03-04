@@ -1,13 +1,13 @@
 <template>
-  <index/>
+  <dm-map/>
 </template>
 
 <script>
-import index from '../examples/Choropleth/Index'
+import DmMap from './components/DmMap'
 export default {
   name: 'App',
   components: {
-    index
+    DmMap
   },
   data () {
     return {
@@ -17,6 +17,7 @@ export default {
   },
   mounted () {
     this.load('/data/gdp.json')
+    // this.center.color = '#555'
   },
   provide () {
     const map = {data: [], world: { objects: []}}
@@ -48,7 +49,10 @@ export default {
 </script>
 
 <style>
-body {
-  margin: 10px;
+.dm-map {
+  width: 960px;
+  height: 602px;
+  border: #000 solid 1px;
+  background-color:#4499bb;
 }
 </style>

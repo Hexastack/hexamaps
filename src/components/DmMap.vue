@@ -8,22 +8,22 @@
         <dm-entity
           v-for="(entity, index) in countries"
           :key="entity.properties.id || entity.properties.NAME || index"
-          :data="stachData(entity)"
           :d="topo(world, entity)"
+          :data="entity.properties"
+          :centroid="centroid(world, entity)"
+
           :entityOnClick="entityOnClick"
           :entityOnHover="entityOnHover"
-          :entityOnMount="entityOnMount"
-          :entityDrawLand="entityDrawLand"
-          :entityDrawBorder="entityDrawBorder"
         />
       </g>
+      <slot/>
     </svg>
   </div>
 </template>
 
 <script>
 import DmEntity from './DmEntity'
-import { geoPath, geoMercator } from 'd3-geo'
+import { geoPath, geoMercator, geoCentroid } from 'd3-geo'
 import { mesh } from 'topojson'
 export default {
   name: 'DmMap',
@@ -42,7 +42,7 @@ export default {
     }
   },
   props: {
-    // Handlers
+    // Event Handlers
     entityOnClick: {
       type: Function,
       default: function (e, entity) { }
@@ -50,23 +50,6 @@ export default {
     entityOnHover: {
       type: Function,
       default: function (e, entity) { }
-    },
-    entityOnMount: {
-      type: Function,
-      default: function (entity) { }
-    },
-    attachData: {
-      type: Function,
-      default: function (entity) { return null}
-    },
-    // Renderer
-    entityDrawLand: {
-      type: Function,
-      default: function (entity) { return this.land }
-    },
-    entityDrawBorder: {
-      type: Function,
-      default: function (entity) { return this.border }
     }
   },
   data () {
@@ -92,7 +75,7 @@ export default {
   methods: {
     resize () {
       this.width = this.$el.offsetWidth
-      this.height = this.$el.offsetHeight
+      this.height = this.$el.offsetHeight - 4
     },
     load () {
       fetch(this.map.source)
@@ -110,9 +93,8 @@ export default {
     topo (world, entity) {
       return this.geoPath(mesh(world, entity))
     },
-    stachData (entity) {
-      entity.userData = this.attachData(entity)
-      return entity
+    centroid (world, entity) {
+      return this.geoPath.centroid(mesh(world, entity))
     }
   },
   computed: {

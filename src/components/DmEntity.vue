@@ -5,9 +5,10 @@
       @click="click"
       @mouseover="hover"
       :d="d"
-      :fill="fill"
-      :stroke="stroke"
+      :fill="land"
+      :stroke="border"
     />
+    <slot/>
   </g>
 </template>
 
@@ -25,71 +26,46 @@ export default {
       type: Object,
       default () {return {}}
     },
-    // Handlers
+    type: {
+      type: String,
+      default: 'country'
+    },
+    centroid: {
+      type: Array,
+      default () { return [0, 0] }
+    },
+    // events
     entityOnClick: {
       type: Function,
-      default: function (e, entity) { }
+      default (e, entity) { }
     },
     entityOnHover: {
       type: Function,
-      default: function (e, entity) { }
-    },
-    entityOnMount: {
-      type: Function,
-      default: function (entity) { }
-    },
-    // Renderer
-    entityDrawLand: {
-      type: Function,
-      default: function (entity) { return this.land }
-    },
-    entityDrawBorder: {
-      type: Function,
-      default: function (entity) { return this.border }
+      default (e, entity) { }
     }
   },
   data () {
     return {
       land: '#000000',
-      border: '#aaaaaa',
+      border: '#000000',
       scale: 1,
       x: 0,
       y: 0,
       angle: 0
     }
   },
-  created () {
-    this.expose = new Expose({
-      data: this.data,
-      land: this.land,
-      border: this.border,
-      scale: this.scale,
-      x: this.x,
-      y: this.y,
-      angle: this.angle
-    }, this)
-    this.mount()
-  },
   methods: {
     click (e) {
-      this.expose.unwrap(this.entityOnClick(e, this.expose.wrap()))
+      // this.center.color = '#cc00dd'
+      console.log(this)
     },
     hover (e) {
-      this.expose.unwrap(this.entityOnHover(e, this.expose.wrap()))
-    },
-    mount () {
-      this.expose.unwrap(this.entityOnMount(this.expose.wrap()))
+      
     }
   },
   computed: {
     transform () {
       return `translate(${this.x}, ${this.y}) scale(${this.scale}) rotate(${this.angle})`
-    },
-    fill () {
-     return this.entityDrawLand(this.expose.wrap())
-    },
-    stroke () {
-      return this.entityDrawBorder(this.expose.wrap())
     }
   }
 }

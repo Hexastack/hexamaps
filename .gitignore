@@ -19,6 +19,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# local examples and wiki
+/examples
+/wiki
+
 # Editor directories and files
 .idea
 .vscode
