@@ -16,6 +16,17 @@
 import Expose from '../lib/warpExpose'
 export default {
   name: 'DmEntity',
+  inject: {
+    map: {
+      type: Object,
+      default () {
+        return {
+          data: [],
+          source: '/topos/world110m.json'
+        }
+      }
+    }
+  },
   props: {
     // Static props
     d: {
@@ -26,9 +37,13 @@ export default {
       type: Object,
       default () {return {}}
     },
+    category: {
+      type: String,
+      default: 'entity'
+    },
     type: {
       type: String,
-      default: 'country'
+      default: 'A2'
     },
     centroid: {
       type: Array,
@@ -46,8 +61,8 @@ export default {
   },
   data () {
     return {
-      land: '#000000',
-      border: '#000000',
+      land: '#000',
+      border: '#666',
       scale: 1,
       x: 0,
       y: 0,

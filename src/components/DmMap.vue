@@ -11,6 +11,7 @@
           :d="topo(world, entity)"
           :data="entity.properties"
           :centroid="centroid(world, entity)"
+          :type="'A' + entity.properties.LEVEL"
 
           :entityOnClick="entityOnClick"
           :entityOnHover="entityOnHover"
@@ -23,7 +24,10 @@
 
 <script>
 import DmEntity from './DmEntity'
-import { geoPath, geoMercator, geoCentroid } from 'd3-geo'
+import { 
+  geoPath, geoCentroid,
+  geoMercator 
+} from 'd3-geo'
 import { mesh } from 'topojson'
 export default {
   name: 'DmMap',
@@ -42,6 +46,14 @@ export default {
     }
   },
   props: {
+    category: {
+      type: String,
+      default: 'layer'
+    },
+    type: {
+      type: String,
+      default: 'map'
+    },
     // Event Handlers
     entityOnClick: {
       type: Function,

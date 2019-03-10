@@ -1,14 +1,13 @@
 .DS_Store
 node_modules
-/dist
+dist
 
 # local env files
 .env.local
 .env.*.local
 
 # map sources
-public/topos
-public/data
+public
 
 # no lock for now
 yarn.lock
@@ -20,8 +19,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # local examples and wiki
-/examples
-/wiki
+examples
+wiki
 
 # Editor directories and files
 .idea
