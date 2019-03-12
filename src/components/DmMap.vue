@@ -5,6 +5,7 @@
       :style="style"
     >
       <g class="dm-countries" :transform="transform">
+        <path v-if="withGraticule" stroke="#ccc" fill="none" class="dm-graticules" :d="graticule()"/>
         <dm-entity
           v-for="(entity, index) in countries"
           :key="entity.properties.id || entity.properties.NAME || index"
@@ -12,9 +13,6 @@
           :data="entity.properties"
           :centroid="centroid(world, entity)"
           :type="'A' + entity.properties.LEVEL"
-
-          :entityOnClick="entityOnClick"
-          :entityOnHover="entityOnHover"
         />
       </g>
       <slot/>
@@ -24,11 +22,41 @@
 
 <script>
 import DmEntity from './DmEntity'
-import { 
-  geoPath, geoCentroid,
-  geoMercator 
+import { geoPath, geoCentroid, geoGraticule } from 'd3-geo'
+import {
+  geoAzimuthalEqualArea,
+  geoAzimuthalEquidistant,
+  geoGnomonic,
+  geoOrthographic,
+  geoStereographic,
+  geoEqualEarth,
+  geoConicConformal,
+  geoConicEqualArea,
+  geoConicEquidistant,
+  geoEquirectangular,
+  geoMercator,
+  geoTransverseMercator,
+  geoNaturalEarth1
 } from 'd3-geo'
+import * as Projections from 'd3-geo-projection'
 import { mesh } from 'topojson'
+
+const projections = Object.assign({
+  geoAzimuthalEqualArea,
+  geoAzimuthalEquidistant,
+  geoGnomonic,
+  geoOrthographic,
+  geoStereographic,
+  geoEqualEarth,
+  geoConicConformal,
+  geoConicEqualArea,
+  geoConicEquidistant,
+  geoEquirectangular,
+  geoMercator,
+  geoTransverseMercator,
+  geoNaturalEarth1
+}, Projections)
+
 export default {
   name: 'DmMap',
   components: {
@@ -46,6 +74,14 @@ export default {
     }
   },
   props: {
+    projection: {
+      type: String,
+      default: 'geoMercator'
+    },
+    withGraticule: {
+      type: Boolean,
+      default: false
+    },
     category: {
       type: String,
       default: 'layer'
@@ -53,15 +89,6 @@ export default {
     type: {
       type: String,
       default: 'map'
-    },
-    // Event Handlers
-    entityOnClick: {
-      type: Function,
-      default: function (e, entity) { }
-    },
-    entityOnHover: {
-      type: Function,
-      default: function (e, entity) { }
     }
   },
   data () {
@@ -82,7 +109,18 @@ export default {
     this.resize()
     window.addEventListener('resize', this.resize)
     this.load()
-    this.geoPath = geoPath().projection(geoMercator())
+    const projection = projections[this.projection] ? projections[this.projection] : projections.geoMercator
+    this.geoPath = geoPath().projection(projection())
+  },
+  watch: {
+    projection (newProjection) {
+      const projection = projections[this.projection] ? projections[this.projection] : projections.geoMercator
+      this.geoPath = geoPath().projection(projection())
+    },
+    'map.source' () {
+      this.load()
+      // this.$forceUpdate()
+    }
   },
   methods: {
     resize () {
@@ -104,6 +142,9 @@ export default {
     },
     topo (world, entity) {
       return this.geoPath(mesh(world, entity))
+    },
+    graticule () {
+      return this.geoPath(geoGraticule()())
     },
     centroid (world, entity) {
       return this.geoPath.centroid(mesh(world, entity))

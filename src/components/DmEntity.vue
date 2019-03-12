@@ -48,15 +48,6 @@ export default {
     centroid: {
       type: Array,
       default () { return [0, 0] }
-    },
-    // events
-    entityOnClick: {
-      type: Function,
-      default (e, entity) { }
-    },
-    entityOnHover: {
-      type: Function,
-      default (e, entity) { }
     }
   },
   data () {
@@ -69,13 +60,29 @@ export default {
       angle: 0
     }
   },
+  created () {
+    this.expose = new Expose({
+      land: this.land,
+      border: this.border,
+      scale: this.scale,
+      x: this.x,
+      y: this.y,
+      angle: this.angle
+    }, {
+      data: this.data,
+      category: this.category,
+      type: this.type,
+      centroid: this.centroid
+    }, this)
+  },
   methods: {
     click (e) {
-      // this.center.color = '#cc00dd'
-      console.log(this)
+      if (this.entityOnClick)
+        this.expose.unwrap(this.entityOnClick(e, this))
     },
     hover (e) {
-      
+      if (this.entityOnHover)
+        this.expose.unwrap(this.entityOnHover(e, this))
     }
   },
   computed: {
