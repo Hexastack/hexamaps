@@ -1,19 +1,21 @@
 import Vue from 'vue'
-import DmMap from './components/DmMap'
+import Map from './components/DmMap'
 import config from './config'
-// import plugin from '../examples/plugins/center/transpile'
 
+const DmMap = Map()
 const App = {
   name: 'App',
-  components: {
-    DmMap
-  },
   render: function (createElement) {
-    return createElement ('dm-map', {props: {
-      projection: this.projection,
-      withGraticule: this.withGraticule
-    }
-  })},
+    return createElement (
+      DmMap,
+      {props:
+        {
+          projection: this.projection,
+          withGraticule: this.withGraticule
+        }
+      }
+    )
+  },
   data () {
     return {
       data: [],
@@ -54,8 +56,6 @@ const App = {
 }
 
 Vue.config.productionTip = false
-
-// Vue.use(plugin)
 
 new Vue({
   render: h => h(App),
