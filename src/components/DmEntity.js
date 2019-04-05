@@ -1,5 +1,27 @@
 import Expose from '../lib/warpExpose'
-export default function(mixins = [], children) {
+export default function(mixins = [], children, pluginProps) {
+  const props = {
+    // Static props
+    d: {
+      type: String,
+      default: ''
+    },
+    data: {
+      type: Object,
+      default () {return {}}
+    },
+    type: {
+      type: String,
+      default: 'A2'
+    },
+    centroid: {
+      type: Array,
+      default () { return [0, 0] }
+    }
+  }
+  for (let pp in pluginProps) {
+    props[pp] = pluginProps[pp]
+  }
   return {
     name: 'DmEntity',
     mixins,
@@ -27,29 +49,7 @@ export default function(mixins = [], children) {
         }
       }
     },
-    props: {
-      // Static props
-      d: {
-        type: String,
-        default: ''
-      },
-      data: {
-        type: Object,
-        default () {return {}}
-      },
-      category: {
-        type: String,
-        default: 'entity'
-      },
-      type: {
-        type: String,
-        default: 'A2'
-      },
-      centroid: {
-        type: Array,
-        default () { return [0, 0] }
-      }
-    },
+    props,
     data () {
       return {
         land: '#000',

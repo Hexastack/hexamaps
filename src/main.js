@@ -2,7 +2,7 @@ import Vue from 'vue'
 import Map from './components/DmMap'
 import config from './config'
 
-const DmMap = Map()
+const DmMap = Map(plugin)
 const App = {
   name: 'App',
   render: function (createElement) {

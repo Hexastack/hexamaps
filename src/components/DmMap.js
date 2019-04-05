@@ -39,20 +39,31 @@ export default function(plugin) {
     name: 'DmMap',
     mixins: plugin.mapMixin,
     render: function (createElement) {
-      const createEntities = (ce, children, mixins) => {
+      const propsArray = plugin.mapMixin.map(pm => pm.data())
+      let pluginProps = {}
+      for (let i = 0; i < propsArray.length; i++) {
+        Object.assign(pluginProps, propsArray[i])
+      }
+      const createProps = (entity, pluginProps) => {
+        let props = {
+          d: this.topo(this.world, this.countries[entity]),
+          data: this.countries[entity].properties,
+          centroid: this.centroid(this.world, this.countries[entity]),
+          type: 'A' + this.countries[entity].properties.LEVEL
+        }
+        for (let pp in pluginProps) {
+          props[pp] = pluginProps[pp]
+        }
+        return props
+      }
+      const createEntities = (ce, children, mixins, pluginProps) => {
         let entities = []
         for (let entity in this.countries) {
-          let DmEntity = Entity(mixins, children)
+          let DmEntity = Entity(mixins, children, pluginProps)
           entities.push(ce(DmEntity, {
             key: this.countries[entity].properties.id || this.countries[entity].properties.NAME || entity,
-            props: {
-              d: this.topo(this.world, this.countries[entity]),
-              data: this.countries[entity].properties,
-              centroid: this.centroid(this.world, this.countries[entity]),
-              type: 'A' + this.countries[entity].properties.LEVEL
-            }
+            props: createProps(entity, pluginProps)
           }))
-            
         }
         return entities
       }
@@ -60,7 +71,7 @@ export default function(plugin) {
         createElement('svg', {class: 'dm-svg', style: this.style}, [
           createElement('g', {class: 'dm-countries', attrs: {transform: this.transform}}, [
             this.withGraticule ? createElement('path', {class: 'dm-graticules', attrs: {stroke: '#ccc', fill: 'none', d: this.graticule()}}) : null,
-            createEntities(createElement, plugin.entityComponents, plugin.entityMixin)
+            createEntities(createElement, plugin.entityComponents, plugin.entityMixin, pluginProps)
           ])
         ])
       ])
@@ -84,10 +95,6 @@ export default function(plugin) {
       withGraticule: {
         type: Boolean,
         default: false
-      },
-      category: {
-        type: String,
-        default: 'layer'
       },
       type: {
         type: String,
@@ -122,6 +129,12 @@ export default function(plugin) {
       },
       'map.source' () {
         this.load()
+      },
+      'map.data' : { 
+        handler () {
+          this.$forceUpdate()
+        },
+        deep: true
       }
     },
     methods: {
