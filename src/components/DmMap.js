@@ -49,7 +49,8 @@ export default function(plugin) {
           d: this.topo(this.world, this.countries[entity]),
           data: this.countries[entity].properties,
           centroid: this.centroid(this.world, this.countries[entity]),
-          type: 'A' + this.countries[entity].properties.LEVEL
+          type: 'A' + this.countries[entity].properties.LEVEL,
+          strokeWidth: 1 / this.scale
         }
         for (let pp in pluginProps) {
           props[pp] = pluginProps[pp]
@@ -68,7 +69,7 @@ export default function(plugin) {
         return entities
       }
       return createElement ('div', {class: 'dm-map'}, [
-        createElement('svg', {class: 'dm-svg', style: this.style}, [
+        createElement('svg', {class: 'dm-svg', style: this.style, on: {wheel: this.zoom}}, [
           createElement('g', {class: 'dm-countries', attrs: {transform: this.transform}}, [
             this.withGraticule ? createElement('path', {class: 'dm-graticules', attrs: {stroke: '#ccc', fill: 'none', d: this.graticule()}}) : null,
             createEntities(createElement, plugin.entityComponents, plugin.entityMixin, pluginProps)
@@ -163,6 +164,25 @@ export default function(plugin) {
       },
       centroid (world, entity) {
         return this.geoPath.centroid(mesh(world, entity))
+      },
+      zoom (e) {
+        e.preventDefault()
+        const zoom = -e.deltaY / 3
+        const scale = 2 ** (Math.log2(this.scale) + zoom)
+        if (scale < 0.125 || scale > 64) {
+          return false
+        }
+        const coef = -.25 - e.deltaY * -.25
+        const X = e.clientX - this.$el.offsetLeft + window.scrollX
+        const Y = e.clientY - this.$el.offsetTop + window.scrollY
+        // if (e.deltaY < 0) {
+        this.x = 2 ** zoom * (this.x + coef * this.scale * X) + coef * ((1 - scale) * X)
+        this.y = 2 ** zoom * (this.y +  coef * this.scale * Y) + coef * ((1 - scale) * Y)
+        // } else {
+        //   this.x = .5 * (this.x + this.scale / 2 * e.clientX) + .5 * ((1 - scale) * e.clientX)
+        //   this.y = .5 * (this.y + this.scale / 2 * e.clientY) + .5 * ((1 - scale) * e.clientY)
+        // }
+        this.scale = scale
       }
     },
     computed: {

@@ -12,11 +12,15 @@ export default function(mixins = [], children, pluginProps) {
     },
     type: {
       type: String,
-      default: 'A2'
+      default: 'A0'
     },
     centroid: {
       type: Array,
       default () { return [0, 0] }
+    },
+    strokeWidth: {
+      type: Number,
+      default: 1
     }
   }
   for (let pp in pluginProps) {
@@ -29,8 +33,8 @@ export default function(mixins = [], children, pluginProps) {
       return createElement ('g', {class: 'dm-entity-box', attrs: {transform: this.transform}, slot: 'entity'}, [
         createElement('path', {
           class: 'dm-entity',
-          on:{click: this.click, hover: this.hover},
-          attrs: {d: this.d, fill: this.land, stroke: this.border}}
+          on:{click: this.click, mouseenter: this.hover},
+          attrs: {d: this.d, fill: this.land, stroke: this.border, 'stroke-width': this.strokeWidth}}
         ),
         children.map(child => {
           const ecs = child(this, this[child.pluginName], this.map.data)
