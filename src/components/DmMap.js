@@ -69,7 +69,12 @@ export default function(plugin) {
         return entities
       }
       return createElement ('div', {class: 'dm-map'}, [
-        createElement('svg', {class: 'dm-svg', style: this.style, on: {wheel: this.zoom}}, [
+        createElement('svg', {class: 'dm-svg', style: this.style, on: {
+          wheel: this.zoom,
+          mousedown: this.panStart,
+          mousemove: this.pan,
+          mouseup: this.panEnd
+        }}, [
           createElement('g', {class: 'dm-countries', attrs: {transform: this.transform}}, [
             this.withGraticule ? createElement('path', {class: 'dm-graticules', attrs: {stroke: '#ccc', fill: 'none', d: this.graticule()}}) : null,
             createEntities(createElement, plugin.entityComponents, plugin.entityMixin, pluginProps)
@@ -165,6 +170,18 @@ export default function(plugin) {
       centroid (world, entity) {
         return this.geoPath.centroid(mesh(world, entity))
       },
+      panStart () {
+        this.panning = !this.panning
+      },
+      pan (e) {
+        if (this.panning) {
+          this.x += e.movementX
+          this.y += e.movementY
+        }
+      },
+      panEnd () {
+        this.panning = false
+      },
       zoom (e) {
         e.preventDefault()
         const zoom = -e.deltaY / 3
@@ -175,13 +192,8 @@ export default function(plugin) {
         const coef = -.25 - e.deltaY * -.25
         const X = e.clientX - this.$el.offsetLeft + window.scrollX
         const Y = e.clientY - this.$el.offsetTop + window.scrollY
-        // if (e.deltaY < 0) {
         this.x = 2 ** zoom * (this.x + coef * this.scale * X) + coef * ((1 - scale) * X)
         this.y = 2 ** zoom * (this.y +  coef * this.scale * Y) + coef * ((1 - scale) * Y)
-        // } else {
-        //   this.x = .5 * (this.x + this.scale / 2 * e.clientX) + .5 * ((1 - scale) * e.clientX)
-        //   this.y = .5 * (this.y + this.scale / 2 * e.clientY) + .5 * ((1 - scale) * e.clientY)
-        // }
         this.scale = scale
       }
     },
