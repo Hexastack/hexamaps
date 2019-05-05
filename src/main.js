@@ -1,8 +1,11 @@
 import Vue from 'vue'
 import Map from './components/DmMap'
 import config from './config'
+import transpile from './lib/transpile'
 
-const DmMap = Map()
+const plugin = transpile()
+
+const DmMap = Map(plugin)
 const App = {
   name: 'App',
   render: function (createElement) {
@@ -56,6 +59,8 @@ const App = {
 }
 
 Vue.config.productionTip = false
+
+Vue.use(plugin.entry)
 
 new Vue({
   render: h => h(App),

@@ -35,6 +35,7 @@ const projections = Object.assign({
 }, Projections)
 
 export default function(plugin) {
+  let entities = []
   return {
     name: 'DmMap',
     mixins: plugin.mapMixin,
@@ -58,15 +59,23 @@ export default function(plugin) {
         return props
       }
       const createEntities = (ce, children, mixins, pluginProps) => {
-        let entities = []
+        if (this.countryChanged) {
+          entities = []
+        }
+        let i = 0
+        let es = []
         for (let entity in this.countries) {
-          let DmEntity = Entity(mixins, children, pluginProps)
-          entities.push(ce(DmEntity, {
+          if (this.countryChanged) {
+            entities[i] = Entity(mixins, children, pluginProps)
+          }
+          es.push(ce(entities[i], {
             key: this.countries[entity].properties.id || this.countries[entity].properties.NAME || entity,
             props: createProps(entity, pluginProps)
           }))
+          i++
         }
-        return entities
+        this.countryChanged = false
+        return es
       }
       return createElement ('div', {class: 'dm-map'}, [
         createElement('svg', {class: 'dm-svg', style: this.style, on: {
@@ -118,7 +127,8 @@ export default function(plugin) {
         scale: 1,
         x: 0,
         y: 0,
-        angle: 0
+        angle: 0,
+        countryChanged: true
       }
     },
     mounted () {
@@ -141,6 +151,9 @@ export default function(plugin) {
           this.$forceUpdate()
         },
         deep: true
+      },
+      countries () {
+        this.countryChanged = true
       }
     },
     methods: {
@@ -183,18 +196,20 @@ export default function(plugin) {
         this.panning = false
       },
       zoom (e) {
-        e.preventDefault()
-        const zoom = -e.deltaY / 3
-        const scale = 2 ** (Math.log2(this.scale) + zoom)
-        if (scale < 0.125 || scale > 64) {
-          return false
+        if (e.ctrlKey) {
+          e.preventDefault()
+          const zoom = -e.deltaY / 3
+          const scale = 2 ** (Math.log2(this.scale) + zoom)
+          if (scale < 0.125 || scale > 64) {
+            return false
+          }
+          const coef = -.25 - e.deltaY * -.25
+          const X = e.clientX - this.$el.offsetLeft + window.scrollX
+          const Y = e.clientY - this.$el.offsetTop + window.scrollY
+          this.x = 2 ** zoom * (this.x + coef * this.scale * X) + coef * ((1 - scale) * X)
+          this.y = 2 ** zoom * (this.y +  coef * this.scale * Y) + coef * ((1 - scale) * Y)
+          this.scale = scale
         }
-        const coef = -.25 - e.deltaY * -.25
-        const X = e.clientX - this.$el.offsetLeft + window.scrollX
-        const Y = e.clientY - this.$el.offsetTop + window.scrollY
-        this.x = 2 ** zoom * (this.x + coef * this.scale * X) + coef * ((1 - scale) * X)
-        this.y = 2 ** zoom * (this.y +  coef * this.scale * Y) + coef * ((1 - scale) * Y)
-        this.scale = scale
       }
     },
     computed: {

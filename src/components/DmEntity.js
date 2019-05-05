@@ -81,11 +81,11 @@ export default function(mixins = [], children, pluginProps) {
     },
     methods: {
       click (e) {
-        if (this.entityOnClick)
+        if (this.entityOnClick && !e.ctrlKey)
           this.expose.unwrap(this.entityOnClick(e, this))
       },
       hover (e) {
-        if (this.entityOnHover)
+        if (this.entityOnHover && !e.ctrlKey)
           this.expose.unwrap(this.entityOnHover(e, this))
       }
     },
