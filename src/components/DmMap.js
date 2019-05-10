@@ -84,10 +84,16 @@ export default function(plugin) {
           mousemove: this.pan,
           mouseup: this.panEnd
         }}, [
-          createElement('g', {class: 'dm-countries', attrs: {transform: this.transform}}, [
-            this.withGraticule ? createElement('path', {class: 'dm-graticules', attrs: {stroke: '#ccc', fill: 'none', d: this.graticule()}}) : null,
-            createEntities(createElement, plugin.entityComponents, plugin.entityMixin, pluginProps)
-          ])
+          createElement('g', {class: 'dm-countries', attrs: {transform: this.transform}},
+            plugin.mapComponents.map(child => {
+              const ecs = child(this, this[child.pluginName], this.map.data)
+              return ecs.map(ec => createElement(ec.component, {props: ec.props}))
+            })
+            .concat([
+              this.withGraticule ? createElement('path', {class: 'dm-graticules', attrs: {stroke: '#ccc', fill: 'none', d: this.graticule()}}) : null,
+              createEntities(createElement, plugin.entityComponents, plugin.entityMixin, pluginProps)
+            ])
+          )
         ])
       ])
     },

@@ -10,14 +10,14 @@ const definition = {
       Vue.prototype.entityOnClick = (e, entity) => {
         let changes = entity.expose.wrap()
         plugins.filter(P => !!P.entityOnClick).forEach(plugin => {
-          changes = plugin.entityOnClick(e, changes, entity[plugin.name], entity.map.data)
+          changes = plugin.entityOnClick(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
         })
         return changes
       },
       Vue.prototype.entityOnHover = (e, entity) => {
         let changes = entity.expose.wrap()
         plugins.filter(P => !!P.entityOnHover).forEach(plugin => {
-          changes = plugin.entityOnHover(e, changes, entity[plugin.name], entity.map.data)
+          changes = plugin.entityOnHover(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
         })
         return changes
       }
@@ -60,6 +60,5 @@ const generate = () => {
   })
   return definition
 }
-
 
 export default generate

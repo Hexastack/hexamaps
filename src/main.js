@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Map from './components/DmMap'
 import config from './config'
-import transpile from './lib/transpile'
+import transpile from '../examples/choropleth/transpile'
 
 const plugin = transpile()
 

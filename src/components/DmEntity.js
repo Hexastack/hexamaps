@@ -30,14 +30,14 @@ export default function(mixins = [], children, pluginProps) {
     name: 'DmEntity',
     mixins,
     render: function (createElement) {
-      return createElement ('g', {class: 'dm-entity-box', attrs: {transform: this.transform}, slot: 'entity'}, [
+      return createElement ('g', {class: 'dm-entity-box', attrs: {transform: this.transform}}, [
         createElement('path', {
           class: 'dm-entity',
           on:{click: this.click, mouseenter: this.hover},
           attrs: {d: this.d, fill: this.land, stroke: this.border, 'stroke-width': this.strokeWidth}}
         ),
         children.map(child => {
-          const ecs = child(this, this[child.pluginName], this.map.data)
+          const ecs = child(this, this[child.pluginName + 'Entity'], this[child.pluginName], this.map.data)
           return ecs.map(ec => createElement(ec.component, {props: ec.props}))
         })
       ])
