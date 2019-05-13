@@ -1,7 +1,7 @@
-import DmMap from '@/components/DmMap'
-import DmEntity from '@/components/DmEntity'
+import HmMap from '@/components/HmMap'
+import HmEntity from '@/components/HmEntity'
 
 export {
-  DmMap,
-  DmEntity
+  HmMap,
+  HmEntity
 }

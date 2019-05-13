@@ -1,5 +1,6 @@
-import Entity from './DmEntity'
+import Entity from './HmEntity'
 import { geoPath, geoGraticule } from 'd3-geo'
+// Weirdly d3 stores its projections in two librairies, we need to import from and merge em into one Object
 import {
   geoAzimuthalEqualArea,
   geoAzimuthalEquidistant,
@@ -35,9 +36,10 @@ const projections = Object.assign({
 }, Projections)
 
 export default function(plugin) {
+  // Entities are already compiled HmEntity component, we keep track of them and we recreate them only when needed
   let entities = []
   return {
-    name: 'DmMap',
+    name: 'HmMap',
     mixins: plugin.mapMixin,
     render: function (createElement) {
       const propsArray = plugin.mapMixin.map(pm => pm.data())
@@ -45,12 +47,18 @@ export default function(plugin) {
       for (let i = 0; i < propsArray.length; i++) {
         Object.assign(pluginProps, propsArray[i])
       }
+      /**
+       * @method createProps - creates vue-props for the HmEntities
+       * @param {Object} entity - country key of the to be HmEntity
+       * @param {Object} pluginProps - mapData of all plugins used
+       * @returns {Object} - props of the entity, including mapData ones
+       */
       const createProps = (entity, pluginProps) => {
         let props = {
           d: this.topo(this.world, this.countries[entity]),
           data: this.countries[entity].properties,
           centroid: this.centroid(this.world, this.countries[entity]),
-          type: 'A' + this.countries[entity].properties.LEVEL,
+          adminLevel: this.countries[entity].properties.LEVEL,
           strokeWidth: 1 / this.scale
         }
         for (let pp in pluginProps) {
@@ -58,40 +66,52 @@ export default function(plugin) {
         }
         return props
       }
-      const createEntities = (ce, children, mixins, pluginProps) => {
+      /**
+       * @method createEntities - Create a HmEntity
+       * @param {Function} createElement - Vue's createElement (often refered to as h)
+       * @param {Component[]} entityComponents - child component of the HmEntity (entityComponents)
+       * @param {Object} entityMixin - Entity mixins
+       * @param {Object} pluginProps - Map mixins
+       * @returns {Component} - HmEntity, a Compiled Vue component 
+       */
+      const createEntities = (createElement, entityComponents, entityMixin, pluginProps) => {
         if (this.countryChanged) {
           entities = []
         }
         let i = 0
-        let es = []
+        let newEntities = []
         for (let entity in this.countries) {
           if (this.countryChanged) {
-            entities[i] = Entity(mixins, children, pluginProps)
+            entities[i] = Entity(entityMixin, entityComponents, pluginProps)
           }
-          es.push(ce(entities[i], {
+          newEntities.push(createElement(entities[i], {
             key: this.countries[entity].properties.id || this.countries[entity].properties.NAME || entity,
             props: createProps(entity, pluginProps)
           }))
           i++
         }
         this.countryChanged = false
-        return es
+        return newEntities
       }
-      return createElement ('div', {class: 'dm-map'}, [
-        createElement('svg', {class: 'dm-svg', style: this.style, on: {
+      return createElement ('div', {class: 'hm-map'}, [
+        createElement('svg', {class: 'hm-svg', style: this.style, on: {
           wheel: this.zoom,
           mousedown: this.panStart,
           mousemove: this.pan,
           mouseup: this.panEnd
         }}, [
-          createElement('g', {class: 'dm-countries', attrs: {transform: this.transform}},
+          createElement('g', {class: 'hm-countries', attrs: {transform: this.transform}},
+            // MapComponents go first
             plugin.mapComponents.map(child => {
-              const ecs = child(this, this[child.pluginName], this.map.data)
-              return ecs.map(ec => createElement(ec.component, {props: ec.props}))
+              const mapComponents = child(this, this[child.pluginName], this.map.data)
+              return mapComponents.map(mapComponent => createElement(mapComponent.component, {props: mapComponent.props}))
             })
             .concat([
-              this.withGraticule ? createElement('path', {class: 'dm-graticules', attrs: {stroke: '#ccc', fill: 'none', d: this.graticule()}}) : null,
+              // then any hexamaps map layer
+              this.withGraticule ? createElement('path', {class: 'hm-graticules', attrs: {stroke: '#ccc', fill: 'none', d: this.graticule()}}) : null,
+              // Finally the map
               createEntities(createElement, plugin.entityComponents, plugin.entityMixin, pluginProps)
+              // Do we need to draw layers over the map? 
             ])
           )
         ])
@@ -116,35 +136,42 @@ export default function(plugin) {
       withGraticule: {
         type: Boolean,
         default: false
-      },
-      type: {
-        type: String,
-        default: 'map'
       }
     },
     data () {
       return {
+        // width and height proportions are arbitray and fits for mercator projections only
         width: 800,
         height: 600,
+        // tracks if user is panning or not
         panning: false,
-        zooming: false,
+        // list of bordered entities
         countries: [],
+        // will be replaced by a function that draws border according to the choosen projection
         geoPath: function () { return '' },
         scale: 1,
         x: 0,
         y: 0,
         angle: 0,
+        // tracks when countries are geographically changed
         countryChanged: true
+        // Additionally data contain an attr world, not listed as we do not want it reactive
       }
     },
     mounted () {
+      // resize the map to use all the available space
       this.resize()
+      // add a resize listner
       window.addEventListener('resize', this.resize)
+      // we load the map's countries
       this.load()
+      // sets the projects
       const projection = projections[this.projection] ? projections[this.projection] : projections.geoMercator
+      // finnaly we assign the pathing function to our geoPath
       this.geoPath = geoPath().projection(projection())
     },
     watch: {
+      // we re-assign the pathing function each time the projection change
       projection () {
         const projection = projections[this.projection] ? projections[this.projection] : projections.geoMercator
         this.geoPath = geoPath().projection(projection())
@@ -152,6 +179,8 @@ export default function(plugin) {
       'map.source' () {
         this.load()
       },
+      // we manully update this component each time the user's data change,
+      // so any related to data changes propagates to its children
       'map.data' : { 
         handler () {
           this.$forceUpdate()
@@ -164,8 +193,12 @@ export default function(plugin) {
     },
     methods: {
       resize () {
-        this.width = this.$el.offsetWidth
-        this.height = this.$el.offsetHeight - 4
+        this.width = this.$el.clientWidth
+        this.height = this.$el.clientHeight - 4 // firefox always adds 4, if there is padding then this will glitch,
+        // also other solutions are too demanding and not that stable for this problem
+        // e.g: `parseInt(getComputedStyle(this.$el).height)` won't work when box-sizing is set to border box
+        // and getComputedStyle does not work in IE and it blocks growing in responsive setting
+        // best solution remain to get offsetHeight and substruct vertical paddings and borders
       },
       load () {
         fetch(this.map.source)
@@ -180,6 +213,7 @@ export default function(plugin) {
             console.error(err)
           })
       },
+      // main function to draw this map's entities
       topo (world, entity) {
         return this.geoPath(mesh(world, entity))
       },
@@ -189,6 +223,8 @@ export default function(plugin) {
       centroid (world, entity) {
         return this.geoPath.centroid(mesh(world, entity))
       },
+      // panning is controlled by the data attr `panning` and the following three methods
+      // this is prefered over adding and removing event listners for now
       panStart () {
         this.panning = !this.panning
       },
@@ -201,6 +237,8 @@ export default function(plugin) {
       panEnd () {
         this.panning = false
       },
+      // the wheel zoom works fine :) these equations are messy af, for zoom on dbclick
+      // is equivalent to event.deltaY = -3
       zoom (e) {
         if (e.ctrlKey) {
           e.preventDefault()
@@ -222,12 +260,14 @@ export default function(plugin) {
       style () {
         return { height: `${this.height}px`, width: `${this.width}px` }
       },
-      wRatio () {
-        return this.width / 800
-      },
-      hRatio () {
-        return this.height / 600
-      },
+      // Ratios can be used to resize countries within the map, either by stretching em
+      // or by rendering by the smallest ratio as default, they are omitted for now
+      // wRatio () {
+      //   return this.width / 800
+      // },
+      // hRatio () {
+      //   return this.height / 600
+      // },
       transform () {
         return `translate(${this.x}, ${this.y}) scale(${this.scale}) rotate(${this.angle})`
       }

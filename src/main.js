@@ -1,16 +1,22 @@
+// This is the main entry point to the lib, it is used only to execute the lib by itself.
+// The lib by itself, only displays the map without any features.
+// Usually these features are provided by plugins, that are queued and compiled by the transpiler.
+// This file is not bundled within the HexaMaps build.
 import Vue from 'vue'
-import Map from './components/DmMap'
+import Map from './components/HmMap'
 import config from './config'
-import transpile from '../examples/choropleth/transpile'
+import transpile from './lib/transpile'
 
+// Transpiling plugins
 const plugin = transpile()
 
-const DmMap = Map(plugin)
+// Creating a map component that uses the transpiled plugins
+const HmMap = Map(plugin)
 const App = {
-  name: 'App',
+  name: 'HexaMap',
   render: function (createElement) {
     return createElement (
-      DmMap,
+      HmMap,
       {props:
         {
           projection: this.projection,
@@ -20,18 +26,22 @@ const App = {
     )
   },
   data () {
+    // data and source are also injected in the subsequent components
     return {
+      // data is in fact the user's data
       data: [],
+      // source is initially loaded from config
       source: config.mapSource,
       projection: config.projection,
       withGraticule: config.withGraticule
     }
   },
   mounted () {
+    // Loading the user's data
     this.load(config.dataSource)
   },
   provide () {
-    const map = {data: [], source: '', world: { objects: []}}
+    const map = {data: [], source: ''}
     Object.defineProperty(map, 'data', {
        enumerable: true,
        get: () => this.data
