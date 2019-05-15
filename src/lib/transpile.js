@@ -1,38 +1,36 @@
 // Tanspile an HexaMaps' plugin into semi functional object that can be used by the lib.
-
-const plugins = []
-
-const definition = {
-  // To contain vue-mixins that will be used on the HmMap component
-  mapMixin: [],
-  // To contain Components that are to be rendered directly within the HmMap component
-  mapComponents: [],
-  // To contain vue-mixins that will be used on the HmEntity component
-  entityMixin: [],
-  // To contain Components that are to be rendered directly within the HmEntity component
-  entityComponents: [],
-  // Creates a ready to use vue-plugin that implement onClick and onHover listners from the plugins
-  // If more than a plugin provides these listner, they will be all executed, in the plugin's set/import order
-  entry: {
-    install (Vue) {
-      Vue.prototype.entityOnClick = (e, entity) => {
-        let changes = entity.expose.wrap()
-        plugins.filter(P => !!P.entityOnClick).forEach(plugin => {
-          changes = plugin.entityOnClick(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
-        })
-        return changes
-      },
-      Vue.prototype.entityOnHover = (e, entity) => {
-        let changes = entity.expose.wrap()
-        plugins.filter(P => !!P.entityOnHover).forEach(plugin => {
-          changes = plugin.entityOnHover(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
-        })
-        return changes
+const generate = (plugins) => {
+  const definition = {
+    // To contain vue-mixins that will be used on the HmMap component
+    mapMixin: [],
+    // To contain Components that are to be rendered directly within the HmMap component
+    mapComponents: [],
+    // To contain vue-mixins that will be used on the HmEntity component
+    entityMixin: [],
+    // To contain Components that are to be rendered directly within the HmEntity component
+    entityComponents: [],
+    // Creates a ready to use vue-plugin that implement onClick and onHover listners from the plugins
+    // If more than a plugin provides these listner, they will be all executed, in the plugin's set/import order
+    entry: {
+      install (Vue) {
+        Vue.prototype.entityOnClick = (e, entity) => {
+          let changes = entity.expose.wrap()
+          plugins.filter(P => !!P.entityOnClick).forEach(plugin => {
+            changes = plugin.entityOnClick(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
+          })
+          return changes
+        },
+        Vue.prototype.entityOnHover = (e, entity) => {
+          let changes = entity.expose.wrap()
+          plugins.filter(P => !!P.entityOnHover).forEach(plugin => {
+            changes = plugin.entityOnHover(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
+          })
+          return changes
+        }
       }
     }
   }
-}
-const generate = () => {
+
   plugins.forEach(plugin => {
     plugin.entityComponents.pluginName = plugin.name
     definition.entityComponents = definition.entityComponents.concat(plugin.entityComponents)
