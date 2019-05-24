@@ -18,6 +18,7 @@ import {
 } from 'd3-geo'
 import * as Projections from 'd3-geo-projection'
 import { mesh } from 'topojson'
+import { presimplify, simplify } from 'topojson-simplify'
 
 const projections = Object.assign({
   geoAzimuthalEqualArea,
@@ -55,9 +56,9 @@ export default function(plugin) {
        */
       const createProps = (entity, pluginProps) => {
         let props = {
-          d: this.topo(this.world, this.countries[entity]),
+          d: this.countries[entity].d,
           data: this.countries[entity].properties,
-          centroid: this.centroid(this.world, this.countries[entity]),
+          centroid: this.countries[entity].centroid,
           adminLevel: this.countries[entity].properties.LEVEL,
           strokeWidth: 1 / this.scale
         }
@@ -189,6 +190,11 @@ export default function(plugin) {
       },
       countries () {
         this.countryChanged = true
+      },
+      scale () {
+        for (let entity in this.countries) {
+          this.countries[entity].d = this.topo(this.world, this.countries[entity])
+        }
       }
     },
     methods: {
@@ -208,6 +214,10 @@ export default function(plugin) {
           .then(json => {
             this.world = json
             this.countries = json.objects
+            for (let entity in this.countries) {
+              this.countries[entity].d = this.topo(this.world, this.countries[entity])
+              this.countries[entity].centroid = this.centroid(this.world, this.countries[entity])
+            }
           })
           .catch(err => {
             console.error(err)
@@ -215,7 +225,7 @@ export default function(plugin) {
       },
       // main function to draw this map's entities
       topo (world, entity) {
-        return this.geoPath(mesh(world, entity))
+        return this.geoPath(mesh(simplify(presimplify(world), .24 / this.scale - 0.01), entity))
       },
       graticule () {
         return this.geoPath(geoGraticule()())
@@ -244,7 +254,7 @@ export default function(plugin) {
           e.preventDefault()
           const zoom = -e.deltaY / 3
           const scale = 2 ** (Math.log2(this.scale) + zoom)
-          if (scale < 0.125 || scale > 64) {
+          if (scale < 0.125 || scale > 4096) {
             return false
           }
           const coef = -.25 - e.deltaY * -.25
