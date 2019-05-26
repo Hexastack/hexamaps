@@ -1,39 +1,7 @@
 import Entity from './HmEntity'
 import { geoPath, geoGraticule } from 'd3-geo'
-// Weirdly d3 stores its projections in two librairies, we need to import from and merge em into one Object
-import {
-  geoAzimuthalEqualArea,
-  geoAzimuthalEquidistant,
-  geoGnomonic,
-  geoOrthographic,
-  geoStereographic,
-  geoEqualEarth,
-  geoConicConformal,
-  geoConicEqualArea,
-  geoConicEquidistant,
-  geoEquirectangular,
-  geoMercator,
-  geoTransverseMercator,
-  geoNaturalEarth1
-} from 'd3-geo'
-import * as Projections from 'd3-geo-projection'
 import { feature } from 'topojson'
-
-const projections = Object.assign({
-  geoAzimuthalEqualArea,
-  geoAzimuthalEquidistant,
-  geoGnomonic,
-  geoOrthographic,
-  geoStereographic,
-  geoEqualEarth,
-  geoConicConformal,
-  geoConicEqualArea,
-  geoConicEquidistant,
-  geoEquirectangular,
-  geoMercator,
-  geoTransverseMercator,
-  geoNaturalEarth1
-}, Projections)
+import projections from '../lib/projections'
 
 export default function(plugin) {
   // Entities are already compiled HmEntity component, we keep track of them and we recreate them only when needed

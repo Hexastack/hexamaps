@@ -21,7 +21,7 @@ yarn-error.log*
 # local examples and wiki
 examples
 wiki
-
+.projections
 # Editor directories and files
 .idea
 .vscode
