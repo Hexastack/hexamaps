@@ -2,15 +2,41 @@ import Expose from '../lib/warpExpose'
 export default function(mixins = [], children, pluginProps) {
   // Static props
   const props = {
-    // path
-    d: {
-      type: String,
-      default: ''
+    // geoJson
+    feature: {
+      type: Object,
+      default () {
+        return {
+          geometry: {
+            coordinates: [
+              [
+                [0,0]
+              ]
+            ],
+            type: 'Polygon'
+          },
+          properties: {},
+          type: 'Feature'
+        }
+      }
+    },
+    // pathing function
+    geoPath: {
+      type: Function,
+      default () {return ''}
     },
     // data proper to entity, provided from the shapefiles
     data: {
       type: Object,
       default () {return {}}
+    },
+    name: {
+      type: String,
+      default: 'Unknown'
+    },
+    hasc: {
+      type: String,
+      default: '00'
     },
     // Admin level A0 A1 A2... -1 is for non administrative entities e.g: lakes
     adminLevel: {
@@ -21,22 +47,6 @@ export default function(mixins = [], children, pluginProps) {
     type: {
       type: String,
       default: 'Administrative division'
-    },
-    centroid: {
-      type: Array,
-      default () { return [0, 0] }
-    },
-    bounds: {
-      type: Array,
-      default () { return [[0, 0], [200, 200]]}
-    },
-    area: {
-      type: Number,
-      default: 0
-    },
-    measure: {
-      type: Number,
-      default: 0
     },
     strokeWidth: {
       type: Number,
@@ -118,6 +128,27 @@ export default function(mixins = [], children, pluginProps) {
     computed: {
       transform () {
         return `translate(${this.x}, ${this.y}) scale(${this.scale}) rotate(${this.angle})`
+      },
+      // the entity path
+      d () {
+        return this.geoPath(this.feature)
+      },
+      // like a center but for polygones and multi polygons
+      centroid () {
+        return this.geoPath.centroid(this.feature)
+      },
+      // rectangular bbox
+      bounds () {
+        return this.geoPath.bounds(this.feature)
+      },
+      // area of the projected entity (this is not the real physical world area)
+      // it is en px² and usefull to adapt addon's vizualization scaling to the entity
+      area () {
+        return this.geoPath.area(this.feature)
+      },
+      // like area, this is the circomf of the projected entity
+      measure () {
+        return this.geoPath.measure(this.feature)
       }
     }
   }

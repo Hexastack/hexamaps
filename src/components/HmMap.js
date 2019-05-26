@@ -25,14 +25,11 @@ export default function(plugin) {
         // prepare props to pass
         // first entity props
         let props = {
-          d: this.countries[entity].d,
+          geoPath: this.geoPath,
+          feature: this.countries[entity].feature,
           hasc: this.countries[entity].properties.hasc,
           name: this.countries[entity].properties.name,
-          data: this.countries[entity].properties,
-          centroid: this.countries[entity].centroid,
-          bounds: this.countries[entity].bounds,
-          area: this.countries[entity].area,
-          measure: this.countries[entity].measure,
+          data: this.countries[entity].properties, // May be removed as it exists within feature already
           adminLevel: this.countries[entity].properties.level,
           type: this.countries[entity].properties.type,
           strokeWidth: 1 / this.zoom
@@ -168,25 +165,13 @@ export default function(plugin) {
         this.projection = projections[this.projectionName] ? projections[this.projectionName]() : projections.geoMercator()
         this.initialScale = this.projection.scale()
         this.geoPath = geoPath().projection(this.projection.rotate([this.theta, this.phi]).scale(this.scale * this.initialScale))
-        // the next line of code will occure a lot I know, mostly because we are not making these changes
-        // reactive, as other changes may trigger all the next bloc
-        // We have to try to passe the feature to the entity component and try the reactivity in that component
-        for (let entity in this.countries) {
-          this.countries[entity].d = this.geoPath(this.countries[entity].feature)
-          this.countries[entity].centroid = this.geoPath.centroid(this.countries[entity].feature)
-          this.countries[entity].bounds = this.geoPath.bounds(this.countries[entity].feature)
-          this.countries[entity].area = this.geoPath.area(this.countries[entity].feature)
-          this.countries[entity].measure = this.geoPath.measure(this.countries[entity].feature)
-        }
-        // we force update since, the above isn't reactive
-        this.$forceUpdate()
       },
       'map.source' () {
         this.load()
       },
       // we manully update this component each time the user's data change,
       // so any related to data changes propagates to its children
-      'map.data' : { 
+      'map.data' : {
         handler () {
           this.$forceUpdate()
         },
@@ -213,19 +198,13 @@ export default function(plugin) {
           .then(json => {
             this.world = json
             this.countries = json.objects
-            // generate geojson and computes its attributes (area, circomf ...)
-            // in future the features maybe provided directly from the server
-            // and attr computed within the entity component
+            // generate geojson to be passed to entity component
             for (let entity in this.countries) {
               this.countries[entity].feature = feature(this.world, this.countries[entity])
-              this.countries[entity].d = this.geoPath(this.countries[entity].feature)
-              this.countries[entity].centroid = this.geoPath.centroid(this.countries[entity].feature)
-              this.countries[entity].bounds = this.geoPath.bounds(this.countries[entity].feature)
-              this.countries[entity].area = this.geoPath.area(this.countries[entity].feature)
-              this.countries[entity].measure = this.geoPath.measure(this.countries[entity].feature)
             }
           })
           .catch(err => {
+            // eslint-disable-next-line no-console
             console.error(err)
           })
       },
@@ -245,14 +224,7 @@ export default function(plugin) {
             this.theta += e.movementX
             this.phi -= e.movementY
             this.projection.rotate([this.theta, this.phi])
-            for (let entity in this.countries) {
-              this.countries[entity].d = this.geoPath(this.countries[entity].feature)
-              this.countries[entity].centroid = this.geoPath.centroid(this.countries[entity].feature)
-              this.countries[entity].bounds = this.geoPath.bounds(this.countries[entity].feature)
-              this.countries[entity].area = this.geoPath.area(this.countries[entity].feature)
-              this.countries[entity].measure = this.geoPath.measure(this.countries[entity].feature)
-            }
-            this.$forceUpdate()
+            this.geoPath = geoPath().projection(this.projection)
           } else if (e.shiftKey) {
             // planar rotation
             this.angle += (e.movementX - e.movementY) / 2
@@ -292,14 +264,7 @@ export default function(plugin) {
             }
             this.scale = scale
             this.projection.scale(this.scale * this.initialScale)
-            for (let entity in this.countries) {
-              this.countries[entity].d = this.geoPath(this.countries[entity].feature)
-              this.countries[entity].centroid = this.geoPath.centroid(this.countries[entity].feature)
-              this.countries[entity].bounds = this.geoPath.bounds(this.countries[entity].feature)
-              this.countries[entity].area = this.geoPath.area(this.countries[entity].feature)
-              this.countries[entity].measure = this.geoPath.measure(this.countries[entity].feature)
-            }
-            this.$forceUpdate()
+            this.geoPath = geoPath().projection(this.projection)
           }
         }
       }

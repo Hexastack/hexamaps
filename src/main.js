@@ -64,6 +64,7 @@ const App = {
           // consider default stashing here
         })
         .catch(err => {
+          // eslint-disable-next-line no-console
           console.error(err)
         })
     }
