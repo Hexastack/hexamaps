@@ -26,6 +26,18 @@ export default function(mixins = [], children, pluginProps) {
       type: Array,
       default () { return [0, 0] }
     },
+    bounds: {
+      type: Array,
+      default () { return [[0, 0], [200, 200]]}
+    },
+    area: {
+      type: Number,
+      default: 0
+    },
+    measure: {
+      type: Number,
+      default: 0
+    },
     strokeWidth: {
       type: Number,
       default: 1

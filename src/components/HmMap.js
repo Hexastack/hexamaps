@@ -17,8 +17,7 @@ import {
   geoNaturalEarth1
 } from 'd3-geo'
 import * as Projections from 'd3-geo-projection'
-import { mesh } from 'topojson'
-import { presimplify, simplify } from 'topojson-simplify'
+import { feature } from 'topojson'
 
 const projections = Object.assign({
   geoAzimuthalEqualArea,
@@ -55,13 +54,22 @@ export default function(plugin) {
        * @returns {Object} - props of the entity, including mapData ones
        */
       const createProps = (entity, pluginProps) => {
+        // prepare props to pass
+        // first entity props
         let props = {
           d: this.countries[entity].d,
+          hasc: this.countries[entity].properties.hasc,
+          name: this.countries[entity].properties.name,
           data: this.countries[entity].properties,
           centroid: this.countries[entity].centroid,
-          adminLevel: this.countries[entity].properties.LEVEL,
-          strokeWidth: 1 / this.scale
+          bounds: this.countries[entity].bounds,
+          area: this.countries[entity].area,
+          measure: this.countries[entity].measure,
+          adminLevel: this.countries[entity].properties.level,
+          type: this.countries[entity].properties.type,
+          strokeWidth: 1 / this.zoom
         }
+        // then addon props
         for (let pp in pluginProps) {
           props[pp] = pluginProps[pp]
         }
@@ -86,7 +94,7 @@ export default function(plugin) {
             entities[i] = Entity(entityMixin, entityComponents, pluginProps)
           }
           newEntities.push(createElement(entities[i], {
-            key: this.countries[entity].properties.id || this.countries[entity].properties.NAME || entity,
+            key: this.countries[entity].properties.id,
             props: createProps(entity, pluginProps)
           }))
           i++
@@ -96,7 +104,7 @@ export default function(plugin) {
       }
       return createElement ('div', {class: 'hm-map'}, [
         createElement('svg', {class: 'hm-svg', style: this.style, on: {
-          wheel: this.zoom,
+          wheel: this.wheel,
           mousedown: this.panStart,
           mousemove: this.pan,
           mouseup: this.panEnd
@@ -130,7 +138,7 @@ export default function(plugin) {
       }
     },
     props: {
-      projection: {
+      projectionName: {
         type: String,
         default: 'geoMercator'
       },
@@ -150,9 +158,22 @@ export default function(plugin) {
         countries: [],
         // will be replaced by a function that draws border according to the choosen projection
         geoPath: function () { return '' },
+        // will be replaced by a projection function
+        projection: function () { return '' }, // or projections.geoMercator(), ?
+        // this is a planar zoom value, it works like zooming into a picture
+        // it scales all the elements within the drawing area
+        zoom: 1,
+        // this is the projection zoom, it scale according to the projection
+        // it scales the map only
         scale: 1,
+        initialScale: 1,
+        // coordinate of the drawing area
         x: 0,
         y: 0,
+        // projection rotation/transition angles
+        theta: 0,
+        phi: 0,
+        // planar angle, it rotate everything in the drawing area
         angle: 0,
         // tracks when countries are geographically changed
         countryChanged: true
@@ -164,18 +185,33 @@ export default function(plugin) {
       this.resize()
       // add a resize listner
       window.addEventListener('resize', this.resize)
-      // we load the map's countries
+      // sets the projection
+      this.projection = projections[this.projectionName] ? projections[this.projectionName]() : projections.geoMercator()
+      // each projection comes with a scale (suitable scale for a 600/600 drawing area), we save it to use it a coeficient when scaling 
+      this.initialScale = this.projection.scale()
+      // we assign the pathing function to our geoPath
+      this.geoPath = geoPath().projection(this.projection)
+      // finally we load the map
       this.load()
-      // sets the projects
-      const projection = projections[this.projection] ? projections[this.projection] : projections.geoMercator
-      // finnaly we assign the pathing function to our geoPath
-      this.geoPath = geoPath().projection(projection())
     },
     watch: {
       // we re-assign the pathing function each time the projection change
-      projection () {
-        const projection = projections[this.projection] ? projections[this.projection] : projections.geoMercator
-        this.geoPath = geoPath().projection(projection())
+      projectionName () {
+        this.projection = projections[this.projectionName] ? projections[this.projectionName]() : projections.geoMercator()
+        this.initialScale = this.projection.scale()
+        this.geoPath = geoPath().projection(this.projection.rotate([this.theta, this.phi]).scale(this.scale * this.initialScale))
+        // the next line of code will occure a lot I know, mostly because we are not making these changes
+        // reactive, as other changes may trigger all the next bloc
+        // We have to try to passe the feature to the entity component and try the reactivity in that component
+        for (let entity in this.countries) {
+          this.countries[entity].d = this.geoPath(this.countries[entity].feature)
+          this.countries[entity].centroid = this.geoPath.centroid(this.countries[entity].feature)
+          this.countries[entity].bounds = this.geoPath.bounds(this.countries[entity].feature)
+          this.countries[entity].area = this.geoPath.area(this.countries[entity].feature)
+          this.countries[entity].measure = this.geoPath.measure(this.countries[entity].feature)
+        }
+        // we force update since, the above isn't reactive
+        this.$forceUpdate()
       },
       'map.source' () {
         this.load()
@@ -190,11 +226,6 @@ export default function(plugin) {
       },
       countries () {
         this.countryChanged = true
-      },
-      scale () {
-        for (let entity in this.countries) {
-          this.countries[entity].d = this.topo(this.world, this.countries[entity])
-        }
       }
     },
     methods: {
@@ -214,24 +245,25 @@ export default function(plugin) {
           .then(json => {
             this.world = json
             this.countries = json.objects
+            // generate geojson and computes its attributes (area, circomf ...)
+            // in future the features maybe provided directly from the server
+            // and attr computed within the entity component
             for (let entity in this.countries) {
-              this.countries[entity].d = this.topo(this.world, this.countries[entity])
-              this.countries[entity].centroid = this.centroid(this.world, this.countries[entity])
+              this.countries[entity].feature = feature(this.world, this.countries[entity])
+              this.countries[entity].d = this.geoPath(this.countries[entity].feature)
+              this.countries[entity].centroid = this.geoPath.centroid(this.countries[entity].feature)
+              this.countries[entity].bounds = this.geoPath.bounds(this.countries[entity].feature)
+              this.countries[entity].area = this.geoPath.area(this.countries[entity].feature)
+              this.countries[entity].measure = this.geoPath.measure(this.countries[entity].feature)
             }
           })
           .catch(err => {
             console.error(err)
           })
       },
-      // main function to draw this map's entities
-      topo (world, entity) {
-        return this.geoPath(mesh(simplify(presimplify(world), .24 / this.scale - 0.01), entity))
-      },
+      // Generates graticules for the given projection
       graticule () {
         return this.geoPath(geoGraticule()())
-      },
-      centroid (world, entity) {
-        return this.geoPath.centroid(mesh(world, entity))
       },
       // panning is controlled by the data attr `panning` and the following three methods
       // this is prefered over adding and removing event listners for now
@@ -240,8 +272,27 @@ export default function(plugin) {
       },
       pan (e) {
         if (this.panning) {
-          this.x += e.movementX
-          this.y += e.movementY
+          if (e.ctrlKey) {
+            // projection transition/rotation
+            this.theta += e.movementX
+            this.phi -= e.movementY
+            this.projection.rotate([this.theta, this.phi])
+            for (let entity in this.countries) {
+              this.countries[entity].d = this.geoPath(this.countries[entity].feature)
+              this.countries[entity].centroid = this.geoPath.centroid(this.countries[entity].feature)
+              this.countries[entity].bounds = this.geoPath.bounds(this.countries[entity].feature)
+              this.countries[entity].area = this.geoPath.area(this.countries[entity].feature)
+              this.countries[entity].measure = this.geoPath.measure(this.countries[entity].feature)
+            }
+            this.$forceUpdate()
+          } else if (e.shiftKey) {
+            // planar rotation
+            this.angle += (e.movementX - e.movementY) / 2
+          } else {
+            // planar transition
+            this.x += e.movementX
+            this.y += e.movementY
+          }
         }
       },
       panEnd () {
@@ -249,20 +300,39 @@ export default function(plugin) {
       },
       // the wheel zoom works fine :) these equations are messy af, for zoom on dbclick
       // is equivalent to event.deltaY = -3
-      zoom (e) {
-        if (e.ctrlKey) {
+      wheel (e) {
+        if (e.ctrlKey || e.shiftKey) {
           e.preventDefault()
           const zoom = -e.deltaY / 3
-          const scale = 2 ** (Math.log2(this.scale) + zoom)
-          if (scale < 0.125 || scale > 4096) {
-            return false
+          if (e.ctrlKey) {
+            // planar zoom
+            const scale = 2 ** (Math.log2(this.zoom) + zoom)
+            if (scale < 0.125 || scale > 4096) {
+              return false
+            }
+            const coef = -.25 - e.deltaY * -.25
+            const X = e.clientX - this.$el.offsetLeft + window.scrollX
+            const Y = e.clientY - this.$el.offsetTop + window.scrollY
+            this.x = 2 ** zoom * (this.x + coef * this.zoom * X) + coef * ((1 - scale) * X)
+            this.y = 2 ** zoom * (this.y +  coef * this.zoom * Y) + coef * ((1 - scale) * Y)
+            this.zoom = scale
+          } else {
+            // projection zoom
+            const scale = 2 ** (Math.log2(this.scale) + zoom)
+            if (scale < 0.125 || scale > 4096) {
+              return false
+            }
+            this.scale = scale
+            this.projection.scale(this.scale * this.initialScale)
+            for (let entity in this.countries) {
+              this.countries[entity].d = this.geoPath(this.countries[entity].feature)
+              this.countries[entity].centroid = this.geoPath.centroid(this.countries[entity].feature)
+              this.countries[entity].bounds = this.geoPath.bounds(this.countries[entity].feature)
+              this.countries[entity].area = this.geoPath.area(this.countries[entity].feature)
+              this.countries[entity].measure = this.geoPath.measure(this.countries[entity].feature)
+            }
+            this.$forceUpdate()
           }
-          const coef = -.25 - e.deltaY * -.25
-          const X = e.clientX - this.$el.offsetLeft + window.scrollX
-          const Y = e.clientY - this.$el.offsetTop + window.scrollY
-          this.x = 2 ** zoom * (this.x + coef * this.scale * X) + coef * ((1 - scale) * X)
-          this.y = 2 ** zoom * (this.y +  coef * this.scale * Y) + coef * ((1 - scale) * Y)
-          this.scale = scale
         }
       }
     },
@@ -279,7 +349,7 @@ export default function(plugin) {
       //   return this.height / 600
       // },
       transform () {
-        return `translate(${this.x}, ${this.y}) scale(${this.scale}) rotate(${this.angle})`
+        return `translate(${this.x}, ${this.y}) scale(${this.zoom}) rotate(${this.angle}, ${this.width / 2}, ${this.height/2})`
       }
     },
     beforeDestroy () {

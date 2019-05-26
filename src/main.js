@@ -20,7 +20,7 @@ const App = {
       HmMap,
       {props:
         {
-          projection: this.projection,
+          projectionName: this.projectionName,
           withGraticule: this.withGraticule
         }
       }
@@ -33,7 +33,7 @@ const App = {
       data: [],
       // source is initially loaded from config
       source: config.mapSource,
-      projection: config.projection,
+      projectionName: config.projectionName,
       withGraticule: config.withGraticule
     }
   },
@@ -61,6 +61,7 @@ const App = {
         })
         .then(json => {
           this.data = json
+          // consider default stashing here
         })
         .catch(err => {
           console.error(err)
