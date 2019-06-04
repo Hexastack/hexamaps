@@ -1,4 +1,33 @@
 // Tanspile an HexaMaps' plugin into semi functional object that can be used by the lib.
+const defaults = {
+  // basics
+  string: '',
+  number: 0,
+  boolean: false,
+  array: [],
+  object: {},
+  // advanced
+  color: '#000',
+  date: new Date(),
+  // comlex
+  coordinate: [0, 0]
+}
+
+const getDefaults = (dataDefinition) => {
+  const data = {}
+  for (let key in dataDefinition) {
+    if (dataDefinition[key].default) {
+      data[key] = dataDefinition[key].default
+    } else if (dataDefinition[key].type) {
+      data[key] = defaults[dataDefinition[key].type]
+    }
+    if (!data[key]) {
+      data[key] = null
+    }
+  }
+  return data
+}
+
 const generate = (plugins) => {
   const definition = {
     // To contain vue-mixins that will be used on the HmMap component
@@ -32,6 +61,9 @@ const generate = (plugins) => {
   }
 
   plugins.forEach(plugin => {
+    const entityData = getDefaults(plugin.entityData)
+    const mapData = getDefaults(plugin.mapData)
+    
     plugin.entityComponents.pluginName = plugin.name
     definition.entityComponents = definition.entityComponents.concat(plugin.entityComponents)
     plugin.mapComponents.pluginName = plugin.name
@@ -42,7 +74,7 @@ const generate = (plugins) => {
     definition.entityMixin.push({
       data () {
         const data = {}
-        data[plugin.name + 'Entity'] = Object.assign({}, plugin.entityData)
+        data[plugin.name + 'Entity'] = Object.assign({}, entityData)
         return data
       },
       updated () {
@@ -53,7 +85,7 @@ const generate = (plugins) => {
     const mapMixin = {
       data () {
         const data = {}
-        data[plugin.name] = plugin.mapData
+        data[plugin.name] = mapData
         return data
       },
       updated () {

@@ -2,6 +2,7 @@ import Entity from './HmEntity'
 import { geoPath, geoGraticule } from 'd3-geo'
 import { feature } from 'topojson'
 import projections from '../lib/projections'
+import { geoStitch } from 'd3-geo-projection'
 
 export default function(plugin) {
   // Entities are already compiled HmEntity component, we keep track of them and we recreate them only when needed
@@ -27,11 +28,12 @@ export default function(plugin) {
         let props = {
           geoPath: this.geoPath,
           feature: this.countries[entity].feature,
-          hasc: this.countries[entity].properties.hasc,
-          name: this.countries[entity].properties.name,
+          hasc: this.countries[entity].properties.HASC,
+          name: this.countries[entity].properties.NAME,
           data: this.countries[entity].properties, // May be removed as it exists within feature already
-          adminLevel: this.countries[entity].properties.level,
-          type: this.countries[entity].properties.type,
+          adminLevel: this.countries[entity].properties.LEVEL,
+          type: this.countries[entity].properties.TYPE,
+          maxLevel: this.countries[entity].properties.MAXLEVEL,
           strokeWidth: 1 / this.zoom
         }
         // then addon props
@@ -59,7 +61,7 @@ export default function(plugin) {
             entities[i] = Entity(entityMixin, entityComponents, pluginProps)
           }
           newEntities.push(createElement(entities[i], {
-            key: this.countries[entity].properties.id,
+            key: this.countries[entity].properties.ID,
             props: createProps(entity, pluginProps)
           }))
           i++
@@ -155,7 +157,7 @@ export default function(plugin) {
       // each projection comes with a scale (suitable scale for a 600/600 drawing area), we save it to use it a coeficient when scaling 
       this.initialScale = this.projection.scale()
       // we assign the pathing function to our geoPath
-      this.geoPath = geoPath().projection(this.projection)
+      this.geoPath = geoPath().projection(this.projection.rotate([this.theta, this.phi]).scale(this.scale * this.initialScale))
       // finally we load the map
       this.load()
     },
@@ -200,7 +202,7 @@ export default function(plugin) {
             this.countries = json.objects
             // generate geojson to be passed to entity component
             for (let entity in this.countries) {
-              this.countries[entity].feature = feature(this.world, this.countries[entity])
+              this.countries[entity].feature = geoStitch(feature(this.world, this.countries[entity]))
             }
           })
           .catch(err => {
@@ -254,7 +256,7 @@ export default function(plugin) {
             const X = e.clientX - this.$el.offsetLeft + window.scrollX
             const Y = e.clientY - this.$el.offsetTop + window.scrollY
             this.x = 2 ** zoom * (this.x + coef * this.zoom * X) + coef * ((1 - scale) * X)
-            this.y = 2 ** zoom * (this.y +  coef * this.zoom * Y) + coef * ((1 - scale) * Y)
+            this.y = 2 ** zoom * (this.y + coef * this.zoom * Y) + coef * ((1 - scale) * Y)
             this.zoom = scale
           } else {
             // projection zoom
@@ -262,6 +264,11 @@ export default function(plugin) {
             if (scale < 0.125 || scale > 4096) {
               return false
             }
+            const coef = -.25 - e.deltaY * -.25
+            const X = e.clientX - this.$el.offsetLeft + window.scrollX - this.width / 2
+            const Y = e.clientY - this.$el.offsetTop + window.scrollY - this.height / 2
+            this.x = 2 ** zoom * (this.x + coef * this.scale * X) + coef * ((1 - scale) * X)
+            this.y = 2 ** zoom * (this.y + coef * this.scale * Y) + coef * ((1 - scale) * Y)
             this.scale = scale
             this.projection.scale(this.scale * this.initialScale)
             this.geoPath = geoPath().projection(this.projection)
