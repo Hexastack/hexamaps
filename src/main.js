@@ -9,7 +9,9 @@ import transpile from './lib/transpile'
 import addons from './addons'
 
 // Transpiling plugins
-const plugins = transpile(addons)
+const { plugins } = transpile(addons)
+// console.log(editables)
+// setTimeout(() => editables.chropleth.map.values.scaleName = 'Log', 2000)
 
 // Creating a map component that uses the transpiled plugins
 const HmMap = Map(plugins)

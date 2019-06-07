@@ -28,8 +28,9 @@ const getDefaults = (dataDefinition) => {
   return data
 }
 
-const generate = (plugins) => {
-  const definition = {
+const generate = (addons) => {
+  const editables = {}
+  const plugins = {
     // To contain vue-mixins that will be used on the HmMap component
     mapMixin: [],
     // To contain Components that are to be rendered directly within the HmMap component
@@ -38,14 +39,14 @@ const generate = (plugins) => {
     entityMixin: [],
     // To contain Components that are to be rendered directly within the HmEntity component
     entityComponents: [],
-    // Creates a ready to use vue-plugin that implement onClick and onHover listners from the plugins
+    // Creates a ready to use vue-plugin that implement onClick and onHover listners from the addons
     // If more than a plugin provides these listner, they will be all executed, in the plugin's set/import order
     entry: {
       install (Vue, options) {
         if (!options || !options.editor) {
           Vue.prototype.entityOnClick = (e, entity) => {
             let changes = entity.expose.wrap()
-            plugins.filter(plugin => !!plugin.entity.on.click).forEach(plugin => {
+            addons.filter(plugin => !!plugin.entity.on.click).forEach(plugin => {
               changes = plugin.entity.on.click(
                 e,
                 changes,
@@ -58,7 +59,7 @@ const generate = (plugins) => {
           },
           Vue.prototype.entityOnHover = (e, entity) => {
             let changes = entity.expose.wrap()
-            plugins.filter(plugin => !!plugin.entity.on.hover).forEach(plugin => {
+            addons.filter(plugin => !!plugin.entity.on.hover).forEach(plugin => {
               changes = plugin.entity.on.hover(
                 e,
                 changes,
@@ -71,17 +72,17 @@ const generate = (plugins) => {
           }
         }
         Vue.prototype.mapOnData = (map) => {
-          plugins.filter(plugin => !!plugin.map.on.dataChanged).forEach(plugin => {
+          addons.filter(plugin => !!plugin.map.on.dataChanged).forEach(plugin => {
             plugin.map.on.dataChanged(map, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
           })
         }
         Vue.prototype.mapOnSource = (map) => {
-          plugins.filter(plugin => !!plugin.map.on.sourceChanged).forEach(plugin => {
+          addons.filter(plugin => !!plugin.map.on.sourceChanged).forEach(plugin => {
             plugin.map.on.sourceChanged(map, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
           })
         }
         Vue.prototype.mapOnProjection = (map) => {
-          plugins.filter(plugin => !!plugin.map.on.projectionChanged).forEach(plugin => {
+          addons.filter(plugin => !!plugin.map.on.projectionChanged).forEach(plugin => {
             plugin.map.on.projectionChanged(map, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
           })
         }
@@ -89,22 +90,26 @@ const generate = (plugins) => {
     }
   }
 
-  plugins.forEach(plugin => {
+  addons.forEach(plugin => {
     const mapInputs = getDefaults(plugin.map.inputs)
     const mapOutputs = getDefaults(plugin.map.outputs)
     const mapInternals = getDefaults(plugin.map.data)
     const entityInputs = getDefaults(plugin.entity.inputs)
     const entityOutputs = getDefaults(plugin.entity.outputs)
     const entityInternals = getDefaults(plugin.entity.data)
+    editables[plugin.name] = {
+      map: {values: mapInputs, definition: plugin.map.inputs},
+      entity: {values: entityInputs, definition: plugin.entity.inputs}
+    }
     
     plugin.entity.components.pluginName = plugin.name
-    definition.entityComponents = definition.entityComponents.concat(plugin.entity.components)
+    plugins.entityComponents = plugins.entityComponents.concat(plugin.entity.components)
     plugin.map.components.pluginName = plugin.name
-    definition.mapComponents = definition.mapComponents.concat(plugin.map.components)
+    plugins.mapComponents = plugins.mapComponents.concat(plugin.map.components)
 
     // Creates an isolated data and an updated hook mixin
     // For HmEntity
-    definition.entityMixin.push({
+    plugins.entityMixin.push({
       data () {
         const data = {}
         data[plugin.name + 'Entity'] = Object.assign({}, entityInternals)
@@ -177,9 +182,9 @@ const generate = (plugins) => {
       },
       deep: true
     }
-    definition.mapMixin.push(mapMixin)
+    plugins.mapMixin.push(mapMixin)
   })
-  return definition
+  return {plugins, editables}
 }
 
 export default generate
