@@ -1,6 +1,6 @@
 {
   "name": "hexamaps",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": false,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -16,6 +16,7 @@
     "*.js"
   ],
   "dependencies": {
+    "core-js": "2",
     "d3-geo": "^1.11.1",
     "d3-geo-projection": "^2.6.0",
     "topojson": "^3.0.2",
