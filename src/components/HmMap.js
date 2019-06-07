@@ -81,7 +81,11 @@ export default function(plugin) {
           createElement('g', {class: 'hm-countries', attrs: {transform: this.transform}},
             // MapComponents go first
             plugin.mapComponents.map(child => {
-              const mapComponents = child(this, this[child.pluginName], this.map.data)
+              const mapComponents = child(
+                this,
+                {inputs: this[child.pluginName + 'In'], outputs: this[child.pluginName + 'Out'], data: this[child.pluginName]},
+                this.map.data
+              )
               return mapComponents.map(mapComponent => createElement(mapComponent.component, {props: mapComponent.props}))
             })
             .concat([

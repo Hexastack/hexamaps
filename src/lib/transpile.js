@@ -21,7 +21,7 @@ const getDefaults = (dataDefinition) => {
     } else if (dataDefinition[key].type) {
       data[key] = defaults[dataDefinition[key].type]
     }
-    if (!data[key]) {
+    if (data[key] === undefined) {
       data[key] = null
     }
   }
@@ -46,14 +46,26 @@ const generate = (plugins) => {
           Vue.prototype.entityOnClick = (e, entity) => {
             let changes = entity.expose.wrap()
             plugins.filter(plugin => !!plugin.entity.on.click).forEach(plugin => {
-              changes = plugin.entity.on.click(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
+              changes = plugin.entity.on.click(
+                e,
+                changes,
+                {inputs: entity[plugin.name + 'EntityIn'], outputs: entity[plugin.name + 'EntityOut'], data: entity[plugin.name + 'Entity']},
+                {inputs: entity[plugin.name + 'In'], outputs: entity[plugin.name + 'Out'], data: entity[plugin.name]},
+                entity.map.data
+              )
             })
             return changes
           },
           Vue.prototype.entityOnHover = (e, entity) => {
             let changes = entity.expose.wrap()
             plugins.filter(plugin => !!plugin.entity.on.hover).forEach(plugin => {
-              changes = plugin.entity.on.hover(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
+              changes = plugin.entity.on.hover(
+                e,
+                changes,
+                {inputs: entity[plugin.name + 'EntityIn'], outputs: entity[plugin.name + 'EntityOut'], data: entity[plugin.name + 'Entity']},
+                {inputs: entity[plugin.name + 'In'], outputs: entity[plugin.name + 'Out'], data: entity[plugin.name]},
+                entity.map.data
+              )
             })
             return changes
           }

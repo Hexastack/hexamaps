@@ -68,7 +68,12 @@ export default function(mixins = [], children, pluginProps) {
           attrs: {d: this.d, fill: this.land, stroke: this.border, 'stroke-width': this.strokeWidth}}
         ),
         children.map(child => {
-          const entityComponents = child(this, this[child.pluginName + 'Entity'], this[child.pluginName], this.map.data)
+          const entityComponents = child(
+            this,
+            {inputs: this[child.pluginName + 'EntityIn'], outputs: this[child.pluginName + 'EntityOut'], data: this[child.pluginName + 'Entity']},
+            {inputs: this[child.pluginName + 'In'], outputs: this[child.pluginName + 'Out'], data: this[child.pluginName]},
+            this.map.data
+          )
           return entityComponents.map(entityComponent => createElement(entityComponent.component, {props: entityComponent.props}))
         })
       ])
@@ -111,8 +116,9 @@ export default function(mixins = [], children, pluginProps) {
         type: this.type,
         adminLevel: this.adminLevel,
         name: this.name,
+        geoPath: this.geoPath,
         feature: this.feature,
-        path: this.d,
+        d: this.d,
         centroid: this.centroid,
         area: this.area,
         bounds: this.bounds,
