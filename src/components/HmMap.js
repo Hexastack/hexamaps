@@ -1,4 +1,5 @@
 import Entity from './HmEntity'
+// import Expose from '../lib/warpExpose'
 import { geoPath, geoGraticule } from 'd3-geo'
 import { feature } from 'topojson'
 import projections from '../lib/projections'
@@ -30,10 +31,11 @@ export default function(plugin) {
           feature: this.countries[entity].feature,
           hasc: this.countries[entity].properties.HASC,
           name: this.countries[entity].properties.NAME,
-          data: this.countries[entity].properties, // May be removed as it exists within feature already
+          // data: this.countries[entity].properties, // May be removed as it exists within feature already
           adminLevel: this.countries[entity].properties.LEVEL,
           type: this.countries[entity].properties.TYPE,
           maxLevel: this.countries[entity].properties.MAXLEVEL,
+          data: this.map.data[this.countries[entity].properties.ID] || this.map.data.find(e => e.id === this.countries[entity].properties.ID),
           strokeWidth: 1 / this.zoom
         }
         // then addon props
@@ -167,15 +169,21 @@ export default function(plugin) {
         this.projection = projections[this.projectionName] ? projections[this.projectionName]() : projections.geoMercator()
         this.initialScale = this.projection.scale()
         this.geoPath = geoPath().projection(this.projection.rotate([this.theta, this.phi]).scale(this.scale * this.initialScale))
+        if (this.mapOnProjection)
+          this.mapOnProjection(this)
       },
       'map.source' () {
         this.load()
+        if (this.mapOnSource)
+          this.mapOnSource(this)
       },
       // we manully update this component each time the user's data change,
       // so any related to data changes propagates to its children
       'map.data' : {
         handler () {
-          this.$forceUpdate()
+          if (this.mapOnData)
+            this.mapOnData(this)
+          this.$children.forEach(child => child.$forceUpdate())
         },
         deep: true
       },

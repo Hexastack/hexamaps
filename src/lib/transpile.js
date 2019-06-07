@@ -41,65 +41,130 @@ const generate = (plugins) => {
     // Creates a ready to use vue-plugin that implement onClick and onHover listners from the plugins
     // If more than a plugin provides these listner, they will be all executed, in the plugin's set/import order
     entry: {
-      install (Vue) {
-        Vue.prototype.entityOnClick = (e, entity) => {
-          let changes = entity.expose.wrap()
-          plugins.filter(P => !!P.entityOnClick).forEach(plugin => {
-            changes = plugin.entityOnClick(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
+      install (Vue, options) {
+        if (!options || !options.editor) {
+          Vue.prototype.entityOnClick = (e, entity) => {
+            let changes = entity.expose.wrap()
+            plugins.filter(plugin => !!plugin.entity.on.click).forEach(plugin => {
+              changes = plugin.entity.on.click(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
+            })
+            return changes
+          },
+          Vue.prototype.entityOnHover = (e, entity) => {
+            let changes = entity.expose.wrap()
+            plugins.filter(plugin => !!plugin.entity.on.hover).forEach(plugin => {
+              changes = plugin.entity.on.hover(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
+            })
+            return changes
+          }
+        }
+        Vue.prototype.mapOnData = (map) => {
+          plugins.filter(plugin => !!plugin.map.on.dataChanged).forEach(plugin => {
+            plugin.map.on.dataChanged(map, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
           })
-          return changes
-        },
-        Vue.prototype.entityOnHover = (e, entity) => {
-          let changes = entity.expose.wrap()
-          plugins.filter(P => !!P.entityOnHover).forEach(plugin => {
-            changes = plugin.entityOnHover(e, changes, entity[plugin.name + 'Entity'], entity[plugin.name], entity.map.data)
+        }
+        Vue.prototype.mapOnSource = (map) => {
+          plugins.filter(plugin => !!plugin.map.on.sourceChanged).forEach(plugin => {
+            plugin.map.on.sourceChanged(map, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
           })
-          return changes
+        }
+        Vue.prototype.mapOnProjection = (map) => {
+          plugins.filter(plugin => !!plugin.map.on.projectionChanged).forEach(plugin => {
+            plugin.map.on.projectionChanged(map, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
+          })
         }
       }
     }
   }
 
   plugins.forEach(plugin => {
-    const entityData = getDefaults(plugin.entityData)
-    const mapData = getDefaults(plugin.mapData)
+    const mapInputs = getDefaults(plugin.map.inputs)
+    const mapOutputs = getDefaults(plugin.map.outputs)
+    const mapInternals = getDefaults(plugin.map.data)
+    const entityInputs = getDefaults(plugin.entity.inputs)
+    const entityOutputs = getDefaults(plugin.entity.outputs)
+    const entityInternals = getDefaults(plugin.entity.data)
     
-    plugin.entityComponents.pluginName = plugin.name
-    definition.entityComponents = definition.entityComponents.concat(plugin.entityComponents)
-    plugin.mapComponents.pluginName = plugin.name
-    definition.mapComponents = definition.mapComponents.concat(plugin.mapComponents)
+    plugin.entity.components.pluginName = plugin.name
+    definition.entityComponents = definition.entityComponents.concat(plugin.entity.components)
+    plugin.map.components.pluginName = plugin.name
+    definition.mapComponents = definition.mapComponents.concat(plugin.map.components)
 
     // Creates an isolated data and an updated hook mixin
     // For HmEntity
     definition.entityMixin.push({
       data () {
         const data = {}
-        data[plugin.name + 'Entity'] = Object.assign({}, entityData)
+        data[plugin.name + 'Entity'] = Object.assign({}, entityInternals)
+        data[plugin.name + 'EntityIn'] = Object.assign({}, entityInputs)
+        data[plugin.name + 'EntityOut'] = Object.assign({}, entityOutputs)
         return data
       },
+      created () {
+        if (plugin.entity.lifeCycle.created)
+          plugin.entity.lifeCycle.created(
+            this,
+            {inputs: this[plugin.name + 'EntityIn'], outputs: this[plugin.name + 'EntityOut'], data: this[plugin.name + 'Entity']},
+            {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]},
+            this.map.data
+          )
+      },
       updated () {
-        plugin.entity(this, this[plugin.name + 'Entity'], this[plugin.name], (this.map && this.map.data) ? this.map.data : [])
+        if (plugin.entity.lifeCycle.updated)
+          plugin.entity.lifeCycle.updated(
+            this,
+            {inputs: this[plugin.name + 'EntityIn'], outputs: this[plugin.name + 'EntityOut'], data: this[plugin.name + 'Entity']},
+            {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]},
+            this.map.data
+          )
+      },
+      beforeDestroy () {
+        if (plugin.entity.lifeCycle.beforeDestroy)
+          plugin.entity.lifeCycle.beforeDestroy(
+            this,
+            {inputs: this[plugin.name + 'EntityIn'], outputs: this[plugin.name + 'EntityOut'], data: this[plugin.name + 'Entity']},
+            {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]},
+            this.map.data
+          )
       }
     })
     // And HmMap
     const mapMixin = {
       data () {
         const data = {}
-        data[plugin.name] = mapData
+        data[plugin.name] = mapInternals
+        data[plugin.name + 'In'] = mapInputs
+        data[plugin.name + 'Out'] = mapOutputs
         return data
       },
+      created () {
+        if (plugin.map.created)
+          plugin.map.created(this, {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]}, this.map.data)
+      },
       updated () {
-        plugin.map(this, this[plugin.name], (this.map && this.map.data) ? this.map.data : [])
-        // We need to force updates to run the update hook of HmEntities
-        if (this.$children.length) {
-          this.$children.forEach(child => child.$forceUpdate())
-        }
+        if (plugin.map.updated)
+          plugin.map.updated(this, {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]}, this.map.data)
+      },
+      beforeDestroy () {
+        if (plugin.map.beforeDestroy)
+          plugin.map.beforeDestroy(this, {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]}, this.map.data)
       },
       // We create an empty watch mixin to be filled with handlers
       watch: {}
     }
     // These handlers updates HmEntities, this is needed for the plugin's changes only
-    mapMixin.watch[plugin.name] = {handler: function() {this.$children.forEach(child => child.$forceUpdate())}, deep: true}
+    mapMixin.watch[plugin.name + 'In'] = {
+      handler: function() {
+        if (plugin.map.on.inputChanged)
+          plugin.map.on.inputChanged(
+            this,
+            {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]},
+            this.map.data
+          )
+        this.$children.forEach(child => child.$forceUpdate())
+      },
+      deep: true
+    }
     definition.mapMixin.push(mapMixin)
   })
   return definition

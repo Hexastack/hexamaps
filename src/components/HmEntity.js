@@ -107,9 +107,16 @@ export default function(mixins = [], children, pluginProps) {
         angle: this.angle
       }, {
         data: this.data,
-        category: this.category,
+        hasc: this.hasc,
         type: this.type,
-        centroid: this.centroid
+        adminLevel: this.adminLevel,
+        name: this.name,
+        feature: this.feature,
+        path: this.d,
+        centroid: this.centroid,
+        area: this.area,
+        bounds: this.bounds,
+        measure: this.measure
       }, this)
     },
     methods: {

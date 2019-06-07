@@ -73,7 +73,7 @@ const App = {
 
 Vue.config.productionTip = false
 
-Vue.use(plugins.entry)
+Vue.use(plugins.entry, { editor: false })
 
 new Vue({
   render: h => h(App),
