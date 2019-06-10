@@ -36,7 +36,7 @@ export default function(plugin) {
           type: this.countries[entity].properties.TYPE,
           maxLevel: this.countries[entity].properties.MAXLEVEL,
           data: this.map.data[this.countries[entity].properties.ID] || this.map.data.find(e => e.id === this.countries[entity].properties.ID),
-          strokeWidth: 1 / this.zoom
+          strokeWidth: 1 / this.map.config.zoom
         }
         // then addon props
         for (let pp in pluginProps) {
@@ -78,19 +78,21 @@ export default function(plugin) {
           mousemove: this.pan,
           mouseup: this.panEnd
         }}, [
-          createElement('g', {class: 'hm-countries', attrs: {transform: this.transform}},
+          createElement('g', {class: 'hm-countries', attrs: {transform: this.transform, stroke: this.map.config.border, fill: this.map.config.land}},
             // MapComponents go first
             plugin.mapComponents.map(child => {
               const mapComponents = child(
-                this,
+                this.map.config,
                 {inputs: this[child.pluginName + 'In'], outputs: this[child.pluginName + 'Out'], data: this[child.pluginName]},
                 this.map.data
               )
               return mapComponents.map(mapComponent => createElement(mapComponent.component, {props: mapComponent.props}))
             })
             .concat([
+              // this.
+              this.map.config.withOutline ? createElement('path', {class: 'hm-outline', attrs: {stroke: '#333', fill: this.map.config.sea, d: this.createOutline()}}) : null,
               // then any hexamaps map layer
-              this.withGraticule ? createElement('path', {class: 'hm-graticules', attrs: {stroke: '#ccc', fill: 'none', d: this.graticule()}}) : null,
+              this.map.config.withGraticule ? createElement('path', {class: 'hm-graticules', attrs: {stroke: '#ccc', fill: 'none', d: this.graticule()}}) : null,
               // Finally the map
               createEntities(createElement, plugin.entityComponents, plugin.entityMixin, pluginProps)
               // Do we need to draw layers over the map? 
@@ -105,26 +107,14 @@ export default function(plugin) {
         default () {
           return {
             data: [],
-            source: '/topos/world110m.json'
+            source: '/topos/world110m.json',
+            config: {}
           }
         }
       }
     },
-    props: {
-      projectionName: {
-        type: String,
-        default: 'geoMercator'
-      },
-      withGraticule: {
-        type: Boolean,
-        default: false
-      }
-    },
     data () {
       return {
-        // width and height proportions are arbitray and fits for mercator projections only
-        width: 800,
-        height: 600,
         // tracks if user is panning or not
         panning: false,
         // list of bordered entities
@@ -133,21 +123,6 @@ export default function(plugin) {
         geoPath: function () { return '' },
         // will be replaced by a projection function
         projection: function () { return '' }, // or projections.geoMercator(), ?
-        // this is a planar zoom value, it works like zooming into a picture
-        // it scales all the elements within the drawing area
-        zoom: 1,
-        // this is the projection zoom, it scale according to the projection
-        // it scales the map only
-        scale: 1,
-        initialScale: 1,
-        // coordinate of the drawing area
-        x: 0,
-        y: 0,
-        // projection rotation/transition angles
-        theta: 0,
-        phi: 0,
-        // planar angle, it rotate everything in the drawing area
-        angle: 0,
         // tracks when countries are geographically changed
         countryChanged: true
         // Additionally data contain an attr world, not listed as we do not want it reactive
@@ -159,20 +134,20 @@ export default function(plugin) {
       // add a resize listner
       window.addEventListener('resize', this.resize)
       // sets the projection
-      this.projection = projections[this.projectionName] ? projections[this.projectionName]() : projections.geoMercator()
+      this.projection = projections[this.map.config.projectionName] ? projections[this.map.config.projectionName]() : projections.geoMercator()
       // each projection comes with a scale (suitable scale for a 600/600 drawing area), we save it to use it a coeficient when scaling 
-      this.initialScale = this.projection.scale()
+      this.map.config.initialScale = this.projection.scale()
       // we assign the pathing function to our geoPath
-      this.geoPath = geoPath().projection(this.projection.rotate([this.theta, this.phi]).scale(this.scale * this.initialScale))
+      this.geoPath = geoPath().projection(this.projection.rotate([this.map.config.theta, this.map.config.phi]).scale(this.map.config.scale * this.map.config.initialScale))
       // finally we load the map
       this.load()
     },
     watch: {
       // we re-assign the pathing function each time the projection change
-      projectionName () {
-        this.projection = projections[this.projectionName] ? projections[this.projectionName]() : projections.geoMercator()
-        this.initialScale = this.projection.scale()
-        this.geoPath = geoPath().projection(this.projection.rotate([this.theta, this.phi]).scale(this.scale * this.initialScale))
+      'map.config.projectionName' () {
+        this.projection = projections[this.map.config.projectionName] ? projections[this.map.config.projectionName]() : projections.geoMercator()
+        this.map.config.initialScale = this.projection.scale()
+        this.geoPath = geoPath().projection(this.projection.rotate([this.map.config.theta, this.map.config.phi]).scale(this.map.config.scale * this.map.config.initialScale))
         if (this.mapOnProjection)
           this.mapOnProjection(this)
       },
@@ -191,14 +166,24 @@ export default function(plugin) {
         },
         deep: true
       },
+      // 'map.config': {
+      //   handler () {
+      //     for (let attr in this.map.config) {
+      //       if(this[attr] !== undefined) {
+      //         this[attr] = this.map.config[attr]
+      //       }
+      //     }
+      //   },
+      //   deep: true
+      // },
       countries () {
         this.countryChanged = true
       }
     },
     methods: {
       resize () {
-        this.width = this.$el.clientWidth
-        this.height = this.$el.clientHeight - 4 // firefox always adds 4, if there is padding then this will glitch,
+        this.map.config.width = this.$el.clientWidth
+        this.map.config.height = this.$el.clientHeight - 4 // firefox always adds 4, if there is padding then this will glitch,
         // also other solutions are too demanding and not that stable for this problem
         // e.g: `parseInt(getComputedStyle(this.$el).height)` won't work when box-sizing is set to border box
         // and getComputedStyle does not work in IE and it blocks growing in responsive setting
@@ -226,6 +211,9 @@ export default function(plugin) {
       graticule () {
         return this.geoPath(geoGraticule()())
       },
+      createOutline () {
+        return this.geoPath({type: 'Sphere'})
+      },
       // panning is controlled by the data attr `panning` and the following three methods
       // this is prefered over adding and removing event listners for now
       panStart () {
@@ -235,17 +223,17 @@ export default function(plugin) {
         if (this.panning) {
           if (e.ctrlKey) {
             // projection transition/rotation
-            this.theta += e.movementX
-            this.phi -= e.movementY
-            this.projection.rotate([this.theta, this.phi])
+            this.map.config.theta += e.movementX
+            this.map.config.phi -= e.movementY
+            this.projection.rotate([this.map.config.theta, this.map.config.phi])
             this.geoPath = geoPath().projection(this.projection)
           } else if (e.shiftKey) {
             // planar rotation
-            this.angle += (e.movementX - e.movementY) / 2
+            this.map.config.angle += (e.movementX - e.movementY) / 2
           } else {
             // planar transition
-            this.x += e.movementX
-            this.y += e.movementY
+            this.map.config.x += e.movementX
+            this.map.config.y += e.movementY
           }
         }
       },
@@ -260,29 +248,29 @@ export default function(plugin) {
           const zoom = -e.deltaY / 3
           if (e.ctrlKey) {
             // planar zoom
-            const scale = 2 ** (Math.log2(this.zoom) + zoom)
+            const scale = 2 ** (Math.log2(this.map.config.zoom) + zoom)
             if (scale < 0.125 || scale > 4096) {
               return false
             }
             const coef = -.25 - e.deltaY * -.25
             const X = e.clientX - this.$el.offsetLeft + window.scrollX
             const Y = e.clientY - this.$el.offsetTop + window.scrollY
-            this.x = 2 ** zoom * (this.x + coef * this.zoom * X) + coef * ((1 - scale) * X)
-            this.y = 2 ** zoom * (this.y + coef * this.zoom * Y) + coef * ((1 - scale) * Y)
-            this.zoom = scale
+            this.map.config.x = 2 ** zoom * (this.map.config.x + coef * this.map.config.zoom * X) + coef * ((1 - scale) * X)
+            this.map.config.y = 2 ** zoom * (this.map.config.y + coef * this.map.config.zoom * Y) + coef * ((1 - scale) * Y)
+            this.map.config.zoom = scale
           } else {
             // projection zoom
-            const scale = 2 ** (Math.log2(this.scale) + zoom)
+            const scale = 2 ** (Math.log2(this.map.config.scale) + zoom)
             if (scale < 0.125 || scale > 4096) {
               return false
             }
             const coef = -.25 - e.deltaY * -.25
-            const X = e.clientX - this.$el.offsetLeft + window.scrollX - this.width / 2
-            const Y = e.clientY - this.$el.offsetTop + window.scrollY - this.height / 2
-            this.x = 2 ** zoom * (this.x + coef * this.scale * X) + coef * ((1 - scale) * X)
-            this.y = 2 ** zoom * (this.y + coef * this.scale * Y) + coef * ((1 - scale) * Y)
-            this.scale = scale
-            this.projection.scale(this.scale * this.initialScale)
+            const X = e.clientX - this.$el.offsetLeft + window.scrollX - this.map.config.width / 2
+            const Y = e.clientY - this.$el.offsetTop + window.scrollY - this.map.config.height / 2
+            this.map.config.x = 2 ** zoom * (this.map.config.x + coef * this.map.config.scale * X) + coef * ((1 - scale) * X)
+            this.map.config.y = 2 ** zoom * (this.map.config.y + coef * this.map.config.scale * Y) + coef * ((1 - scale) * Y)
+            this.map.config.scale = scale
+            this.projection.scale(this.map.config.scale * this.map.config.initialScale)
             this.geoPath = geoPath().projection(this.projection)
           }
         }
@@ -290,7 +278,7 @@ export default function(plugin) {
     },
     computed: {
       style () {
-        return { height: `${this.height}px`, width: `${this.width}px` }
+        return { height: `${this.map.config.height}px`, width: `${this.map.config.width}px` }
       },
       // Ratios can be used to resize countries within the map, either by stretching em
       // or by rendering by the smallest ratio as default, they are omitted for now
@@ -301,7 +289,7 @@ export default function(plugin) {
       //   return this.height / 600
       // },
       transform () {
-        return `translate(${this.x}, ${this.y}) scale(${this.zoom}) rotate(${this.angle}, ${this.width / 2}, ${this.height/2})`
+        return `translate(${this.map.config.x}, ${this.map.config.y}) scale(${this.map.config.zoom}) rotate(${this.map.config.angle}, ${this.map.config.width / 2}, ${this.map.config.height/2})`
       }
     },
     beforeDestroy () {

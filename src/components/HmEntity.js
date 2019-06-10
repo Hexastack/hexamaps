@@ -92,8 +92,8 @@ export default function(mixins = [], children, pluginProps) {
     props,
     data () {
       return {
-        land: '#000',
-        border: '#666',
+        land: '',
+        border: '',
         scale: 1,
         x: 0,
         y: 0,

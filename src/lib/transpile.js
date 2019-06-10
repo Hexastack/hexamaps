@@ -10,7 +10,8 @@ const defaults = {
   color: '#000',
   date: new Date(),
   // comlex
-  coordinate: [0, 0]
+  coordinate: [0, 0],
+  colorSchema: 'RdYlGn'
 }
 
 const getDefaults = (dataDefinition) => {
@@ -73,17 +74,17 @@ const generate = (addons) => {
         }
         Vue.prototype.mapOnData = (map) => {
           addons.filter(plugin => !!plugin.map.on.dataChanged).forEach(plugin => {
-            plugin.map.on.dataChanged(map, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
+            plugin.map.on.dataChanged(map.map.config, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
           })
         }
         Vue.prototype.mapOnSource = (map) => {
           addons.filter(plugin => !!plugin.map.on.sourceChanged).forEach(plugin => {
-            plugin.map.on.sourceChanged(map, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
+            plugin.map.on.sourceChanged(map.map.config, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
           })
         }
         Vue.prototype.mapOnProjection = (map) => {
           addons.filter(plugin => !!plugin.map.on.projectionChanged).forEach(plugin => {
-            plugin.map.on.projectionChanged(map, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
+            plugin.map.on.projectionChanged(map.map.config, {inputs: map[plugin.name + 'In'], outputs: map[plugin.name + 'Out'], data: map[plugin.name]}, map.map.data)
           })
         }
       }
@@ -156,15 +157,15 @@ const generate = (addons) => {
       },
       created () {
         if (plugin.map.created)
-          plugin.map.created(this, {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]}, this.map.data)
+          plugin.map.created(this.map.config, {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]}, this.map.data)
       },
       updated () {
         if (plugin.map.updated)
-          plugin.map.updated(this, {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]}, this.map.data)
+          plugin.map.updated(this.map.config, {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]}, this.map.data)
       },
       beforeDestroy () {
         if (plugin.map.beforeDestroy)
-          plugin.map.beforeDestroy(this, {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]}, this.map.data)
+          plugin.map.beforeDestroy(this.map.config, {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]}, this.map.data)
       },
       // We create an empty watch mixin to be filled with handlers
       watch: {}
@@ -174,7 +175,7 @@ const generate = (addons) => {
       handler: function() {
         if (plugin.map.on.inputChanged)
           plugin.map.on.inputChanged(
-            this,
+            this.map.config,
             {inputs: this[plugin.name + 'In'], outputs: this[plugin.name + 'Out'], data: this[plugin.name]},
             this.map.data
           )
