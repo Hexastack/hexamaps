@@ -34,6 +34,10 @@ export default function(mixins = [], children, pluginProps) {
       type: String,
       default: 'Unknown'
     },
+    id: {
+      type: String,
+      default: '000'
+    },
     hasc: {
       type: String,
       default: '00'
@@ -130,6 +134,8 @@ export default function(mixins = [], children, pluginProps) {
       // allowing usage of this component data
       // (we are not using prototype.bind because we are also protecting some readonly data from change), but we can rethink it.
       click (e) {
+        if (this.$root.$options.editor)
+          this.$emit('selectedCountry', this)
         if (this.entityOnClick && !e.ctrlKey)
           this.expose.unwrap(this.entityOnClick(e, this))
       },

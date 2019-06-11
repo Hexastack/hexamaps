@@ -29,6 +29,7 @@ export default function(plugin) {
         let props = {
           geoPath: this.geoPath,
           feature: this.countries[entity].feature,
+          id: this.countries[entity].properties.ID,
           hasc: this.countries[entity].properties.HASC,
           name: this.countries[entity].properties.NAME,
           // data: this.countries[entity].properties, // May be removed as it exists within feature already
@@ -64,7 +65,8 @@ export default function(plugin) {
           }
           newEntities.push(createElement(entities[i], {
             key: this.countries[entity].properties.ID,
-            props: createProps(entity, pluginProps)
+            props: createProps(entity, pluginProps),
+            on: {selectedCountry: (c) => {this.selectedEntity = c.bounds; this.$emit('selectedCountry', c)}}
           }))
           i++
         }
@@ -94,8 +96,24 @@ export default function(plugin) {
               // then any hexamaps map layer
               this.map.config.withGraticule ? createElement('path', {class: 'hm-graticules', attrs: {stroke: '#ccc', fill: 'none', d: this.graticule()}}) : null,
               // Finally the map
-              createEntities(createElement, plugin.entityComponents, plugin.entityMixin, pluginProps)
+              createEntities(createElement, plugin.entityComponents, plugin.entityMixin, pluginProps),
               // Do we need to draw layers over the map? 
+
+              // selected entity bbox (editor mode only)
+              this.selectedEntity && this.selectedEntity.length ? createElement('rect', {
+                class: 'hm-focus-entity',
+                attrs: {
+                  stroke: '#333',
+                  fill: '#c9a6',
+                  'stroke-linejoin': 'round',
+                  'stroke-width': 1 / this.map.config.zoom,
+                  'stroke-dasharray': `${8 / this.map.config.zoom},${4 / this.map.config.zoom}`,
+                  x: this.selectedEntity[0][0],
+                  y: this.selectedEntity[0][1],
+                  width: Math.abs(this.selectedEntity[1][0] - this.selectedEntity[0][0]),
+                  height: Math.abs(this.selectedEntity[1][1] - this.selectedEntity[0][1])
+                }
+              }) : null
             ])
           )
         ])
@@ -124,7 +142,9 @@ export default function(plugin) {
         // will be replaced by a projection function
         projection: function () { return '' }, // or projections.geoMercator(), ?
         // tracks when countries are geographically changed
-        countryChanged: true
+        countryChanged: true,
+        // selected entity bbox (editor mode only)
+        selectedEntity: []
         // Additionally data contain an attr world, not listed as we do not want it reactive
       }
     },
@@ -217,6 +237,8 @@ export default function(plugin) {
       // panning is controlled by the data attr `panning` and the following three methods
       // this is prefered over adding and removing event listners for now
       panStart () {
+        this.$emit('selectedCountry', null)
+        this.selectedEntity = []
         this.panning = !this.panning
       },
       pan (e) {

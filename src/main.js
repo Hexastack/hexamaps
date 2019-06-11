@@ -78,6 +78,7 @@ const Hexamaps = {
           this.data = json
         })
         .catch(err => {
+          // eslint-disable-next-line no-console
           console.error(err)
         })
     }
@@ -90,5 +91,5 @@ Vue.use(plugins.entry, { editor: false })
 
 new Vue({
   editor: false,
-  render: h => h(Hexamaps),
+  render: h => h(Hexamaps)
 }).$mount('#app')
