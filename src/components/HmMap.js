@@ -237,7 +237,8 @@ export default function(plugin) {
       // panning is controlled by the data attr `panning` and the following three methods
       // this is prefered over adding and removing event listners for now
       panStart () {
-        this.$emit('selectedCountry', null)
+        if (this.$root.$options.editor)
+          this.$emit('selectedCountry', null)
         this.selectedEntity = []
         this.panning = !this.panning
       },
