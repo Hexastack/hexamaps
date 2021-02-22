@@ -80,9 +80,19 @@ export default function(plugin) {
           mousemove: this.pan,
           mouseup: this.panEnd
         }}, [
+          createElement('defs', {}, 
+            plugin.mapComponents.filter((com) => com.isDef).map((child) => {
+              const mapDefs = child(
+                this.map.config,
+                {inputs: this[child.pluginName + 'In'], outputs: this[child.pluginName + 'Out'], data: this[child.pluginName]},
+                this.map.data
+              )
+              return mapDefs.map(mapDef => createElement(mapDef.component, {props: mapDef.props}))
+            })
+          ),
           createElement('g', {class: 'hm-countries', attrs: {transform: this.transform, stroke: this.map.config.border, fill: this.map.config.land}},
             // MapComponents go first
-            plugin.mapComponents.map(child => {
+            plugin.mapComponents.filter((com) => !com.isDef).map(child => {
               const mapComponents = child(
                 this.map.config,
                 {inputs: this[child.pluginName + 'In'], outputs: this[child.pluginName + 'Out'], data: this[child.pluginName]},
