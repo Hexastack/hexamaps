@@ -74,12 +74,21 @@ export default function(plugin) {
         return newEntities
       }
       return createElement ('div', {class: 'hm-map'}, [
-        createElement('svg', {class: 'hm-svg', style: this.style, on: {
-          wheel: this.wheel,
-          mousedown: this.panStart,
-          mousemove: this.pan,
-          mouseup: this.panEnd
-        }}, [
+        createElement('svg', {
+          class: 'hm-svg',
+          style: this.style,
+          attrs: {
+            width: this.map.config.width,
+            height: this.map.config.height,
+            viewBox: this.viewBox
+          },
+          on: {
+            wheel: this.wheel,
+            mousedown: this.panStart,
+            mousemove: this.pan,
+            mouseup: this.panEnd
+          }
+        }, [
           createElement('defs', {}, 
             plugin.mapComponents.filter((com) => com.isDef).map((child) => {
               const mapDefs = child(
@@ -213,11 +222,7 @@ export default function(plugin) {
     methods: {
       resize () {
         this.map.config.width = this.$el.clientWidth
-        this.map.config.height = this.$el.clientHeight - 4 // firefox always adds 4, if there is padding then this will glitch,
-        // also other solutions are too demanding and not that stable for this problem
-        // e.g: `parseInt(getComputedStyle(this.$el).height)` won't work when box-sizing is set to border box
-        // and getComputedStyle does not work in IE and it blocks growing in responsive setting
-        // best solution remain to get offsetHeight and substruct vertical paddings and borders
+        this.map.config.height = this.$el.clientHeight - 4 // to be changed to resize observer
       },
       load () {
         fetch(this.map.source)
@@ -273,8 +278,7 @@ export default function(plugin) {
       panEnd () {
         this.panning = false
       },
-      // the wheel zoom works fine :) these equations are messy af, for zoom on dbclick
-      // is equivalent to event.deltaY = -3
+      // bugs on mac zoom, and when using both zooms (projection and planner)
       wheel (e) {
         if (e.ctrlKey || e.shiftKey) {
           e.preventDefault()
@@ -312,6 +316,9 @@ export default function(plugin) {
     computed: {
       style () {
         return { height: `${this.map.config.height}px`, width: `${this.map.config.width}px` }
+      },
+      viewBox () {
+        return `0 0 ${this.map.config.width} ${this.map.config.height}`
       },
       // Ratios can be used to resize countries within the map, either by stretching em
       // or by rendering by the smallest ratio as default, they are omitted for now
