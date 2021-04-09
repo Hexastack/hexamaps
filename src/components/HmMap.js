@@ -66,7 +66,15 @@ export default function(plugin) {
           newEntities.push(createElement(entities[i], {
             key: this.countries[entity].properties.ID,
             props: createProps(entity, pluginProps),
-            on: {selectedCountry: (c) => {this.selectedEntity = c.bounds; this.$emit('selectedCountry', c)}}
+            on: {selectedCountry: (c) => {
+              if (!this.wasMoving) {
+                this.selectedEntity = c
+                this.bounds = c.bounds
+                this.$emit('selectedCountry', c)
+              } else {
+               this.wasMoving = false
+              }
+            }}
           }))
           i++
         }
@@ -119,7 +127,7 @@ export default function(plugin) {
               // Do we need to draw layers over the map? 
 
               // selected entity bbox (editor mode only)
-              this.selectedEntity && this.selectedEntity.length ? createElement('rect', {
+              this.selectedEntity && this.bounds && this.bounds.length ? createElement('rect', {
                 class: 'hm-focus-entity',
                 attrs: {
                   stroke: '#333',
@@ -127,10 +135,10 @@ export default function(plugin) {
                   'stroke-linejoin': 'round',
                   'stroke-width': 1 / this.map.config.zoom,
                   'stroke-dasharray': `${8 / this.map.config.zoom},${4 / this.map.config.zoom}`,
-                  x: this.selectedEntity[0][0],
-                  y: this.selectedEntity[0][1],
-                  width: Math.abs(this.selectedEntity[1][0] - this.selectedEntity[0][0]),
-                  height: Math.abs(this.selectedEntity[1][1] - this.selectedEntity[0][1])
+                  x: this.bounds[0][0],
+                  y: this.bounds[0][1],
+                  width: Math.abs(this.bounds[1][0] - this.bounds[0][0]),
+                  height: Math.abs(this.bounds[1][1] - this.bounds[0][1])
                 }
               }) : null
             ])
@@ -154,6 +162,8 @@ export default function(plugin) {
       return {
         // tracks if user is panning or not
         panning: false,
+        wasMoving: false,
+        bounds: [],
         // list of bordered entities
         countries: [],
         // will be replaced by a function that draws border according to the choosen projection
@@ -252,13 +262,13 @@ export default function(plugin) {
       // panning is controlled by the data attr `panning` and the following three methods
       // this is prefered over adding and removing event listners for now
       panStart () {
-        if (this.$root.$options.editor)
-          this.$emit('selectedCountry', null)
-        this.selectedEntity = []
         this.panning = !this.panning
+        this.wasMoving = false, 
+        this.bounds = this.selectedEntity.bounds
       },
-      pan (e) {
+      pan(e) {
         if (this.panning) {
+          this.wasMoving = true
           if (e.ctrlKey) {
             // projection transition/rotation
             this.map.config.theta += e.movementX
@@ -275,8 +285,15 @@ export default function(plugin) {
           }
         }
       },
-      panEnd () {
-        this.panning = false
+      panEnd() {
+          this.bounds = this.selectedEntity.bounds
+          this.panning = false
+          if(!this.wasMoving){
+            if (this.$root.$options.editor)
+            this.$emit('selectedCountry', null)
+            this.selectedEntity = []
+            this.bounds =  []
+          }
       },
       // bugs on mac zoom, and when using both zooms (projection and planner)
       wheel (e) {
