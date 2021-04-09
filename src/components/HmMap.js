@@ -69,7 +69,6 @@ export default function(plugin) {
             on: {selectedCountry: (c) => {
               if (!this.wasMoving) {
                 this.selectedEntity = c
-                this.bounds = c.bounds
                 this.$emit('selectedCountry', c)
               } else {
                this.wasMoving = false
@@ -127,7 +126,7 @@ export default function(plugin) {
               // Do we need to draw layers over the map? 
 
               // selected entity bbox (editor mode only)
-              this.selectedEntity && this.bounds && this.bounds.length ? createElement('rect', {
+              this.selectedEntity && this.selectedEntity.bounds && this.selectedEntity.bounds.length ? createElement('rect', {
                 class: 'hm-focus-entity',
                 attrs: {
                   stroke: '#333',
@@ -135,10 +134,10 @@ export default function(plugin) {
                   'stroke-linejoin': 'round',
                   'stroke-width': 1 / this.map.config.zoom,
                   'stroke-dasharray': `${8 / this.map.config.zoom},${4 / this.map.config.zoom}`,
-                  x: this.bounds[0][0],
-                  y: this.bounds[0][1],
-                  width: Math.abs(this.bounds[1][0] - this.bounds[0][0]),
-                  height: Math.abs(this.bounds[1][1] - this.bounds[0][1])
+                  x: this.selectedEntity.bounds[0][0],
+                  y: this.selectedEntity.bounds[0][1],
+                  width: Math.abs(this.selectedEntity.bounds[1][0] - this.selectedEntity.bounds[0][0]),
+                  height: Math.abs(this.selectedEntity.bounds[1][1] - this.selectedEntity.bounds[0][1])
                 }
               }) : null
             ])
@@ -173,7 +172,7 @@ export default function(plugin) {
         // tracks when countries are geographically changed
         countryChanged: true,
         // selected entity bbox (editor mode only)
-        selectedEntity: []
+        selectedEntity: null
         // Additionally data contain an attr world, not listed as we do not want it reactive
       }
     },
@@ -263,8 +262,7 @@ export default function(plugin) {
       // this is prefered over adding and removing event listners for now
       panStart () {
         this.panning = !this.panning
-        this.wasMoving = false, 
-        this.bounds = this.selectedEntity.bounds
+        this.wasMoving = false
       },
       pan(e) {
         if (this.panning) {
@@ -286,27 +284,25 @@ export default function(plugin) {
         }
       },
       panEnd() {
-          this.bounds = this.selectedEntity.bounds
           this.panning = false
           if(!this.wasMoving){
             if (this.$root.$options.editor)
-            this.$emit('selectedCountry', null)
-            this.selectedEntity = []
-            this.bounds =  []
-          }
+              this.$emit('selectedCountry', null)
+            this.selectedEntity = null
+          } 
       },
       // bugs on mac zoom, and when using both zooms (projection and planner)
       wheel (e) {
         if (e.ctrlKey || e.shiftKey) {
           e.preventDefault()
-          const zoom = -e.deltaY / 3
+          const zoom = -Math.abs(e.deltaY) / e.deltaY
           if (e.ctrlKey) {
             // planar zoom
             const scale = 2 ** (Math.log2(this.map.config.zoom) + zoom)
             if (scale < 0.125 || scale > 4096) {
               return false
             }
-            const coef = -.25 - e.deltaY * -.25
+            const coef = -.25 + zoom * -.75
             const X = e.clientX - this.$el.offsetLeft + window.scrollX
             const Y = e.clientY - this.$el.offsetTop + window.scrollY
             this.map.config.x = 2 ** zoom * (this.map.config.x + coef * this.map.config.zoom * X) + coef * ((1 - scale) * X)
@@ -318,7 +314,7 @@ export default function(plugin) {
             if (scale < 0.125 || scale > 4096) {
               return false
             }
-            const coef = -.25 - e.deltaY * -.25
+            const coef = -.25 + zoom * -.75
             const X = e.clientX - this.$el.offsetLeft + window.scrollX - this.map.config.width / 2
             const Y = e.clientY - this.$el.offsetTop + window.scrollY - this.map.config.height / 2
             this.map.config.x = 2 ** zoom * (this.map.config.x + coef * this.map.config.scale * X) + coef * ((1 - scale) * X)
@@ -326,6 +322,7 @@ export default function(plugin) {
             this.map.config.scale = scale
             this.projection.scale(this.map.config.scale * this.map.config.initialScale)
             this.geoPath = geoPath().projection(this.projection)
+            
           }
         }
       }
