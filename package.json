@@ -4,9 +4,9 @@
   "private": false,
   "scripts": {
     "serve": "vue-cli-service serve",
+    "lint": "vue-cli-service lint",
     "bundle": "vue-cli-service build --target lib --name HexaMaps ./src/index.js",
-    "bundle-watch": "vue-cli-service build --watch --target lib --name HexaMaps ./src/index.js",
-    "lint": "vue-cli-service lint"
+    "bundle-watch": "vue-cli-service build --watch --target lib --name HexaMaps ./src/index.js"
   },
   "main": "./dist/HexaMaps.umd.min.js",
   "files": [
@@ -24,11 +24,14 @@
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.0.1",
-    "@vue/cli-plugin-eslint": "^3.0.1",
+    "@vue/cli-plugin-eslint": "~4.5.0",
     "@vue/cli-service": "^3.0.1",
-    "babel-eslint": "^10.0.1",
-    "eslint": "^5.8.0",
-    "eslint-plugin-vue": "^5.0.0-0",
+    "@vue/eslint-config-prettier": "^6.0.0",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.7.2",
+    "eslint-plugin-prettier": "^3.3.1",
+    "eslint-plugin-vue": "^6.2.2",
+    "prettier": "^2.2.1",
     "vue-template-compiler": "^2.6.8"
   },
   "peerDependencies": {
@@ -40,10 +43,15 @@
       "node": true
     },
     "extends": [
-      "plugin:vue/essential",
+      "plugin:vue/strongly-recommended",
       "eslint:recommended"
     ],
-    "rules": {},
+    "rules": {
+      "indent": [
+        "error",
+        2
+      ]
+    },
     "parserOptions": {
       "parser": "babel-eslint"
     }

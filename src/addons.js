@@ -1,3 +1,3 @@
-const addons = []
+const addons = [];
 
-export default addons
+export default addons;

@@ -14,8 +14,8 @@ import {
   geoEquirectangular,
   geoMercator,
   geoTransverseMercator,
-  geoNaturalEarth1
-} from 'd3-geo'
+  geoNaturalEarth1,
+} from "d3-geo";
 import {
   geoAiry,
   geoAitoff,
@@ -83,8 +83,8 @@ import {
   geoWagner4,
   geoWagner6,
   geoWagner7,
-  geoWinkel3
-} from 'd3-geo-projection'
+  geoWinkel3,
+} from "d3-geo-projection";
 
 export default {
   geoAiry,
@@ -166,5 +166,5 @@ export default {
   geoWagner4,
   geoWagner6,
   geoWagner7,
-  geoWinkel3
-}
+  geoWinkel3,
+};

@@ -2,11 +2,11 @@
 // The lib by itself, only displays the map without any features.
 // Usually these features are provided by plugins, that are queued and compiled by the transpiler.
 // This file is not bundled within the HexaMaps build.
-import Vue from 'vue'
-import Map from './components/HmMap'
-import config from './config'
-import transpile from './lib/transpile'
-import addons from './addons'
+import Vue from "vue";
+import Map from "./components/HmMap";
+import config from "./config";
+import transpile from "./lib/transpile";
+import addons from "./addons";
 
 const defaultConfig = {
   width: 800,
@@ -20,76 +20,77 @@ const defaultConfig = {
   phi: 0,
   angle: 0,
   projectionName: "geoMercator",
-  withGraticule: false
-}
+  withGraticule: false,
+};
 
 // Transpiling plugins
-const { plugins, editables } = transpile(addons)
+const { plugins, editables } = transpile(addons);
 
 for (let addonName in config.addonsConfig) {
   for (let attr in config.addonsConfig[addonName].map) {
-    editables[addonName].map.values[attr] = config.addonsConfig[addonName].map[attr]
+    editables[addonName].map.values[attr] =
+      config.addonsConfig[addonName].map[attr];
   }
 }
 
 // Creating a map component that uses the transpiled plugins
-const HmMap = Map(plugins)
+const HmMap = Map(plugins);
 const Hexamaps = {
-  name: 'HexaMap',
+  name: "HexaMap",
   render: function (createElement) {
-    return createElement(HmMap)
+    return createElement(HmMap);
   },
   data() {
     return {
       data: [],
       source: config.sourceUrl,
-      config: config.config
-    }
+      config: config.config,
+    };
   },
   mounted() {
-    this.config = config.config
-    this.load(config.dataUrl)
+    this.config = config.config;
+    this.load(config.dataUrl);
   },
   provide() {
-    const map = { data: [], source: '', config: defaultConfig }
-    Object.defineProperty(map, 'data', {
+    const map = { data: [], source: "", config: defaultConfig };
+    Object.defineProperty(map, "data", {
       enumerable: true,
       get: () => this.data,
-      set: (data) => this.data = data
-    })
-    Object.defineProperty(map, 'config', {
+      set: (data) => (this.data = data),
+    });
+    Object.defineProperty(map, "config", {
       enumerable: true,
       get: () => this.config,
-      set: (config) => this.config = config
-    })
-    Object.defineProperty(map, 'source', {
+      set: (config) => (this.config = config),
+    });
+    Object.defineProperty(map, "source", {
       enumerable: true,
-      get: () => this.source
-    })
-    return { map }
+      get: () => this.source,
+    });
+    return { map };
   },
   methods: {
     load(dataUrl) {
       fetch(dataUrl)
-        .then(response => {
-          return response.json()
+        .then((response) => {
+          return response.json();
         })
-        .then(json => {
-          this.data = json
+        .then((json) => {
+          this.data = json;
         })
-        .catch(err => {
+        .catch((err) => {
           // eslint-disable-next-line no-console
-          console.error(err)
-        })
-    }
-  }
-}
+          console.error(err);
+        });
+    },
+  },
+};
 
-Vue.config.productionTip = false
+Vue.config.productionTip = false;
 
-Vue.use(plugins.entry, { editor: false, panEnabled: true, zoomEnabled: true })
+Vue.use(plugins.entry, { editor: false, panEnabled: true, zoomEnabled: true });
 
 new Vue({
   editor: false,
-  render: h => h(Hexamaps)
-}).$mount('#app')
+  render: (h) => h(Hexamaps),
+}).$mount("#app");
