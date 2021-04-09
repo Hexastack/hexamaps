@@ -357,7 +357,7 @@ export default function (plugin) {
       // panning is controlled by the data attr `panning` and the following three methods
       // this is prefered over adding and removing event listners for now
       panStart() {
-        if (this.$root.panEnabled) {
+        if (this.$root.$options.panEnabled) {
           this.panning = !this.panning;
           this.wasMoving = false;
         }
@@ -393,7 +393,7 @@ export default function (plugin) {
       },
       // bugs on mac zoom, and when using both zooms (projection and planner)
       wheel(e) {
-        if (this.$root.zoomEnabled) {
+        if (this.$root.$options.zoomEnabled) {
           if (e.ctrlKey || e.shiftKey) {
             e.preventDefault();
             const zoom = -Math.abs(e.deltaY) / e.deltaY;

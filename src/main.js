@@ -88,9 +88,11 @@ const Hexamaps = {
 
 Vue.config.productionTip = false;
 
-Vue.use(plugins.entry, { editor: false, panEnabled: true, zoomEnabled: true });
+Vue.use(plugins.entry, { editor: false });
 
 new Vue({
   editor: false,
-  render: (h) => h(Hexamaps),
+  zoomEnabled: true,
+  panEnabled: true,
+  render: (h) => h(Hexamaps, ),
 }).$mount("#app");
