@@ -87,7 +87,7 @@ const Hexamaps = {
 
 Vue.config.productionTip = false
 
-Vue.use(plugins.entry, { editor: false })
+Vue.use(plugins.entry, { editor: false, panEnabled: true, zoomEnabled: true })
 
 new Vue({
   editor: false,

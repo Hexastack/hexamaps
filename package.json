@@ -1,10 +1,9 @@
 {
   "name": "hexamaps",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "private": false,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
     "bundle": "vue-cli-service build --target lib --name HexaMaps ./src/index.js",
     "bundle-watch": "vue-cli-service build --watch --target lib --name HexaMaps ./src/index.js",
     "lint": "vue-cli-service lint"
