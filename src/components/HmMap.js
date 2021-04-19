@@ -93,15 +93,12 @@ export default function (plugin) {
         this.countryChanged = false;
         return newEntities;
       };
-      return createElement("div", { class: "hm-map" }, [
+      return createElement("div", { class: "hm-map", ref: "map", style: this.style }, [
         createElement(
           "svg",
           {
             class: "hm-svg",
-            style: this.style,
             attrs: {
-              width: this.map.config.width,
-              height: this.map.config.height,
               viewBox: this.viewBox,
             },
             on: {
@@ -195,8 +192,8 @@ export default function (plugin) {
 
                   // selected entity bbox (editor mode only)
                   this.selectedEntity &&
-                  this.selectedEntity.bounds &&
-                  this.selectedEntity.bounds.length
+                    this.selectedEntity.bounds &&
+                    this.selectedEntity.bounds.length
                     ? createElement("rect", {
                       class: "hm-focus-entity",
                       attrs: {
@@ -204,18 +201,17 @@ export default function (plugin) {
                         fill: "#c9a6",
                         "stroke-linejoin": "round",
                         "stroke-width": 1 / this.map.config.zoom,
-                        "stroke-dasharray": `${8 / this.map.config.zoom},${
-                          4 / this.map.config.zoom
-                        }`,
+                        "stroke-dasharray": `${8 / this.map.config.zoom},${4 / this.map.config.zoom
+                          }`,
                         x: this.selectedEntity.bounds[0][0],
                         y: this.selectedEntity.bounds[0][1],
                         width: Math.abs(
                           this.selectedEntity.bounds[1][0] -
-                              this.selectedEntity.bounds[0][0]
+                          this.selectedEntity.bounds[0][0]
                         ),
                         height: Math.abs(
                           this.selectedEntity.bounds[1][1] -
-                              this.selectedEntity.bounds[0][1]
+                          this.selectedEntity.bounds[0][1]
                         ),
                       },
                     })
@@ -262,10 +258,6 @@ export default function (plugin) {
       };
     },
     mounted() {
-      // resize the map to use all the available space
-      this.resize();
-      // add a resize listner
-      window.addEventListener("resize", this.resize);
       // sets the projection
       this.projection = projections[this.map.config.projectionName]
         ? projections[this.map.config.projectionName]()
@@ -280,6 +272,17 @@ export default function (plugin) {
       );
       // finally we load the map
       this.load();
+
+      const myObserver = new ResizeObserver(entries => {
+        entries.forEach(entry => {
+          this.map.config.width = entry.contentRect.width;
+          this.map.config.height = entry.contentRect.height;
+        });
+      });
+      if (this.$refs.map) {
+        myObserver.observe(this.$refs.map);
+      }
+
     },
     watch: {
       // we re-assign the pathing function each time the projection change
@@ -323,10 +326,6 @@ export default function (plugin) {
       },
     },
     methods: {
-      resize() {
-        this.map.config.width = this.$el.clientWidth;
-        this.map.config.height = this.$el.clientHeight - 4; // to be changed to resize observer
-      },
       load() {
         fetch(this.map.source)
           .then((response) => {
@@ -408,11 +407,11 @@ export default function (plugin) {
               const Y = e.clientY - this.$el.offsetTop + window.scrollY;
               this.map.config.x =
                 2 ** zoom *
-                  (this.map.config.x + coef * this.map.config.zoom * X) +
+                (this.map.config.x + coef * this.map.config.zoom * X) +
                 coef * ((1 - scale) * X);
               this.map.config.y =
                 2 ** zoom *
-                  (this.map.config.y + coef * this.map.config.zoom * Y) +
+                (this.map.config.y + coef * this.map.config.zoom * Y) +
                 coef * ((1 - scale) * Y);
               this.map.config.zoom = scale;
             } else {
@@ -434,11 +433,11 @@ export default function (plugin) {
                 this.map.config.height / 2;
               this.map.config.x =
                 2 ** zoom *
-                  (this.map.config.x + coef * this.map.config.scale * X) +
+                (this.map.config.x + coef * this.map.config.scale * X) +
                 coef * ((1 - scale) * X);
               this.map.config.y =
                 2 ** zoom *
-                  (this.map.config.y + coef * this.map.config.scale * Y) +
+                (this.map.config.y + coef * this.map.config.scale * Y) +
                 coef * ((1 - scale) * Y);
               this.map.config.scale = scale;
               this.projection.scale(
@@ -453,27 +452,30 @@ export default function (plugin) {
     computed: {
       style() {
         return {
-          height: `${this.map.config.height}px`,
-          width: `${this.map.config.width}px`,
+          height: '100%',
+          width: '100%',
+          display: 'flex'
         };
       },
       viewBox() {
-        return `0 0 ${this.map.config.width} ${this.map.config.height}`;
+        let x = -this.map.config.x / this.map.config.zoom,
+          y = -this.map.config.y / this.map.config.zoom;
+        let h = this.map.config.height / this.map.config.zoom,
+          w = this.map.config.width / this.map.config.zoom;
+        if (this.$root.$options.mode === "keep") {
+          w = 964 / this.map.config.zoom;
+          h = 722 / this.map.config.zoom;
+          x = x * 964 / this.map.config.width;
+          y = y * 722 / this.map.config.height;
+        } else if (this.$root.$options.mode === "clip" && this.map.config.width < 964) {
+          x = x + ((Math.abs(w - 964 / this.map.config.zoom) / 2) * this.map.config.zoom)
+        }
+        console.log(`${x} ${y} ${w} ${h}`)
+        return `${x} ${y} ${w} ${h}`;
       },
-      // Ratios can be used to resize countries within the map, either by stretching em
-      // or by rendering by the smallest ratio as default, they are omitted for now
-      // wRatio () {
-      //   return this.width / 800
-      // },
-      // hRatio () {
-      //   return this.height / 600
-      // },
       transform() {
-        return `translate(${this.map.config.x}, ${this.map.config.y}) scale(${
-          this.map.config.zoom
-        }) rotate(${this.map.config.angle}, ${this.map.config.width / 2}, ${
-          this.map.config.height / 2
-        })`;
+        return `rotate(${this.map.config.angle}, ${this.map.config.width / 2}, ${this.map.config.height / 2
+          })`;
       },
     },
     beforeDestroy() {

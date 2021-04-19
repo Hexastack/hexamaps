@@ -90,9 +90,12 @@ Vue.config.productionTip = false;
 
 Vue.use(plugins.entry, { editor: false });
 
+// Mode can be : "keep" or "clip"
+
 new Vue({
   editor: false,
   zoomEnabled: true,
   panEnabled: true,
+  mode: "keep",
   render: (h) => h(Hexamaps, ),
 }).$mount("#app");
