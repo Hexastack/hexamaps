@@ -93,7 +93,20 @@ export default function (plugin) {
         this.countryChanged = false;
         return newEntities;
       };
-      return createElement("div", { class: "hm-map", ref: "map", style: this.style }, [
+      return createElement("div", {
+        class: "hm-map", ref: "map", style: {
+          height: '100%',
+          width: '100%',
+          display: 'flex'
+        }
+      }, [
+        createElement(
+          "div",
+          {
+            class: "hm-html",
+            style: { position: "absolute" }
+          }
+        ),
         createElement(
           "svg",
           {
@@ -106,6 +119,7 @@ export default function (plugin) {
               mousedown: this.panStart,
               mousemove: this.pan,
               mouseup: this.panEnd,
+              mouseout: this.mouseOut
             },
           },
           [
@@ -236,6 +250,7 @@ export default function (plugin) {
     },
     data() {
       return {
+        previousZoom: this.map.config.zoom,
         // tracks if user is panning or not
         panning: false,
         wasMoving: false,
@@ -355,8 +370,8 @@ export default function (plugin) {
       },
       // panning is controlled by the data attr `panning` and the following three methods
       // this is prefered over adding and removing event listners for now
-      panStart() {
-        if (this.$root.$options.panEnabled) {
+      panStart(e) {
+        if (this.$root.$options.panEnabled && e.which === 1) {
           this.panning = !this.panning;
           this.wasMoving = false;
         }
@@ -388,6 +403,13 @@ export default function (plugin) {
         if (!this.wasMoving) {
           if (this.$root.$options.editor) this.$emit("selectedCountry", null);
           this.selectedEntity = null;
+        }
+      },
+      mouseOut(e) {
+        e = e ? e : window.event;
+        var from = e.relatedTarget || e.toElement;
+        if (!from || from.nodeName == "HTML") {
+          this.panEnd();
         }
       },
       // bugs on mac zoom, and when using both zooms (projection and planner)
@@ -450,13 +472,6 @@ export default function (plugin) {
       },
     },
     computed: {
-      style() {
-        return {
-          height: '100%',
-          width: '100%',
-          display: 'flex'
-        };
-      },
       viewBox() {
         let x = -this.map.config.x / this.map.config.zoom,
           y = -this.map.config.y / this.map.config.zoom;
@@ -465,12 +480,12 @@ export default function (plugin) {
         if (this.$root.$options.mode === "keep") {
           w = 964 / this.map.config.zoom;
           h = 722 / this.map.config.zoom;
-          x = x * 964 / this.map.config.width;
-          y = y * 722 / this.map.config.height;
-        } else if (this.$root.$options.mode === "clip" && this.map.config.width < 964) {
-          x = x + ((Math.abs(w - 964 / this.map.config.zoom) / 2) * this.map.config.zoom)
+          if (this.previousZoom !== this.map.config.zoom) {
+            x = x * 964 / this.map.config.width;
+            y = y * 722 / this.map.config.height;
+            this.previousZoom = this.map.config.zoom;
+          }
         }
-        console.log(`${x} ${y} ${w} ${h}`)
         return `${x} ${y} ${w} ${h}`;
       },
       transform() {
