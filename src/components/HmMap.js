@@ -119,7 +119,7 @@ export default function (plugin) {
               mousedown: this.panStart,
               mousemove: this.pan,
               mouseup: this.panEnd,
-              mouseout: this.mouseOut
+              mouseleave: this.panEnd,
             },
           },
           [
@@ -403,13 +403,6 @@ export default function (plugin) {
         if (!this.wasMoving) {
           if (this.$root.$options.editor) this.$emit("selectedCountry", null);
           this.selectedEntity = null;
-        }
-      },
-      mouseOut(e) {
-        e = e ? e : window.event;
-        var from = e.relatedTarget || e.toElement;
-        if (!from || from.nodeName == "HTML") {
-          this.panEnd();
         }
       },
       // bugs on mac zoom, and when using both zooms (projection and planner)
