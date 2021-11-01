@@ -37,9 +37,9 @@ export default function (plugin) {
           type: this.countries[entity].properties.TYPE,
           maxLevel: this.countries[entity].properties.MAXLEVEL,
           data:
-            this.map.data[this.countries[entity].properties.ID] ||
+            this.map.data[this.countries[entity].properties.HASC] ||
             this.map.data.find(
-              (e) => e.id === this.countries[entity].properties.ID
+              (e) => e.hasc === this.countries[entity].properties.HASC
             ),
           strokeWidth: 1 / this.map.config.zoom,
         };
@@ -215,8 +215,7 @@ export default function (plugin) {
                         fill: "#c9a6",
                         "stroke-linejoin": "round",
                         "stroke-width": 1 / this.map.config.zoom,
-                        "stroke-dasharray": `${8 / this.map.config.zoom},${4 / this.map.config.zoom
-                          }`,
+                        "stroke-dasharray": `${8 / this.map.config.zoom},${4 / this.map.config.zoom}`,
                         x: this.selectedEntity.bounds[0][0],
                         y: this.selectedEntity.bounds[0][1],
                         width: Math.abs(
@@ -400,10 +399,6 @@ export default function (plugin) {
       },
       panEnd() {
         this.panning = false;
-        if (!this.wasMoving) {
-          if (this.$root.$options.editor) this.$emit("selectedCountry", null);
-          this.selectedEntity = null;
-        }
       },
       // bugs on mac zoom, and when using both zooms (projection and planner)
       wheel(e) {
@@ -482,8 +477,7 @@ export default function (plugin) {
         return `${x} ${y} ${w} ${h}`;
       },
       transform() {
-        return `rotate(${this.map.config.angle}, ${this.map.config.width / 2}, ${this.map.config.height / 2
-          })`;
+        return `rotate(${this.map.config.angle}, ${this.map.config.width / 2}, ${this.map.config.height / 2})`;
       },
     },
     beforeDestroy() {
