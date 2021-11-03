@@ -102,25 +102,23 @@ export default function (plugin) {
             class: "hm-html",
             style: { position: "absolute" }
           },
-          [
-            plugin.mapComponents
-              .map((child) => {
-                const mapComponents = child(
-                  this.map.config,
-                  {
-                    inputs: this[child.pluginName + "In"],
-                    outputs: this[child.pluginName + "Out"],
-                    data: this[child.pluginName],
-                  },
-                  this.map.data
-                );
-                return mapComponents.filter((com) => com.isHtml).map((mapComponent) =>
-                  createElement(mapComponent.component, {
-                    props: mapComponent.props,
-                  })
-                );
-              })
-          ]
+          plugin.mapComponents
+            .map((child) => {
+              const mapComponents = child(
+                this.map.config,
+                {
+                  inputs: this[child.pluginName + "In"],
+                  outputs: this[child.pluginName + "Out"],
+                  data: this[child.pluginName],
+                },
+                this.map.data
+              );
+              return mapComponents.filter((com) => com.isHtml).map((mapComponent) =>
+                createElement(mapComponent.component, {
+                  props: mapComponent.props,
+                })
+              );
+            })
         ),
         createElement(
           "svg",
