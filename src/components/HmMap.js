@@ -78,12 +78,8 @@ export default function (plugin) {
               props: createProps(entity, pluginProps),
               on: {
                 selectedCountry: (c) => {
-                  if (!this.wasMoving) {
-                    this.selectedEntity = c;
-                    this.$emit("selectedCountry", c);
-                  } else {
-                    this.wasMoving = false;
-                  }
+                  this.selectedEntity = c;
+                  this.$emit("selectedCountry", c);
                 },
               },
             })
@@ -105,7 +101,27 @@ export default function (plugin) {
           {
             class: "hm-html",
             style: { position: "absolute" }
-          }
+          },
+          [
+            plugin.mapComponents
+              .filter((com) => com.isHtml)
+              .map((child) => {
+                const mapComponents = child(
+                  this.map.config,
+                  {
+                    inputs: this[child.pluginName + "In"],
+                    outputs: this[child.pluginName + "Out"],
+                    data: this[child.pluginName],
+                  },
+                  this.map.data
+                );
+                return mapComponents.map((mapComponent) =>
+                  createElement(mapComponent.component, {
+                    props: mapComponent.props,
+                  })
+                );
+              })
+          ]
         ),
         createElement(
           "svg",
@@ -154,8 +170,64 @@ export default function (plugin) {
                 },
               },
               // MapComponents go first
-              plugin.mapComponents
-                .filter((com) => !com.isDef)
+              [
+                this.map.config.withOutline
+                  ? createElement("path", {
+                    class: "hm-outline",
+                    attrs: {
+                      stroke: "#333",
+                      fill: this.map.config.sea,
+                      d: this.createOutline(),
+                    },
+                  })
+                  : null,
+                // then any hexamaps map layer
+                this.map.config.withGraticule
+                  ? createElement("path", {
+                    class: "hm-graticules",
+                    attrs: {
+                      stroke: "#ccc",
+                      fill: "none",
+                      d: this.graticule(),
+                    },
+                  })
+                  : null,
+                // Finally the map
+                createEntities(
+                  createElement,
+                  plugin.entityComponents,
+                  plugin.entityMixin,
+                  pluginProps
+                ),
+                // Do we need to draw layers over the map?
+
+                // selected entity bbox (editor mode only)
+                this.selectedEntity &&
+                  this.selectedEntity.bounds &&
+                  this.selectedEntity.bounds.length
+                  ? createElement("rect", {
+                    class: "hm-focus-entity",
+                    attrs: {
+                      stroke: "#333",
+                      fill: "#c9a6",
+                      "stroke-linejoin": "round",
+                      "stroke-width": 1 / this.map.config.zoom,
+                      "stroke-dasharray": `${8 / this.map.config.zoom},${4 / this.map.config.zoom}`,
+                      x: this.selectedEntity.bounds[0][0],
+                      y: this.selectedEntity.bounds[0][1],
+                      width: Math.abs(
+                        this.selectedEntity.bounds[1][0] -
+                        this.selectedEntity.bounds[0][0]
+                      ),
+                      height: Math.abs(
+                        this.selectedEntity.bounds[1][1] -
+                        this.selectedEntity.bounds[0][1]
+                      ),
+                    },
+                  })
+                  : null,
+              ].concat(plugin.mapComponents
+                .filter((com) => !com.isDef && !com.isHtml)
                 .map((child) => {
                   const mapComponents = child(
                     this.map.config,
@@ -171,65 +243,7 @@ export default function (plugin) {
                       props: mapComponent.props,
                     })
                   );
-                })
-                .concat([
-                  // this.
-                  this.map.config.withOutline
-                    ? createElement("path", {
-                      class: "hm-outline",
-                      attrs: {
-                        stroke: "#333",
-                        fill: this.map.config.sea,
-                        d: this.createOutline(),
-                      },
-                    })
-                    : null,
-                  // then any hexamaps map layer
-                  this.map.config.withGraticule
-                    ? createElement("path", {
-                      class: "hm-graticules",
-                      attrs: {
-                        stroke: "#ccc",
-                        fill: "none",
-                        d: this.graticule(),
-                      },
-                    })
-                    : null,
-                  // Finally the map
-                  createEntities(
-                    createElement,
-                    plugin.entityComponents,
-                    plugin.entityMixin,
-                    pluginProps
-                  ),
-                  // Do we need to draw layers over the map?
-
-                  // selected entity bbox (editor mode only)
-                  this.selectedEntity &&
-                    this.selectedEntity.bounds &&
-                    this.selectedEntity.bounds.length
-                    ? createElement("rect", {
-                      class: "hm-focus-entity",
-                      attrs: {
-                        stroke: "#333",
-                        fill: "#c9a6",
-                        "stroke-linejoin": "round",
-                        "stroke-width": 1 / this.map.config.zoom,
-                        "stroke-dasharray": `${8 / this.map.config.zoom},${4 / this.map.config.zoom}`,
-                        x: this.selectedEntity.bounds[0][0],
-                        y: this.selectedEntity.bounds[0][1],
-                        width: Math.abs(
-                          this.selectedEntity.bounds[1][0] -
-                          this.selectedEntity.bounds[0][0]
-                        ),
-                        height: Math.abs(
-                          this.selectedEntity.bounds[1][1] -
-                          this.selectedEntity.bounds[0][1]
-                        ),
-                      },
-                    })
-                    : null,
-                ])
+                }))
             ),
           ]
         ),
@@ -370,6 +384,10 @@ export default function (plugin) {
       // panning is controlled by the data attr `panning` and the following three methods
       // this is prefered over adding and removing event listners for now
       panStart(e) {
+        if (this.$root.$options.editor) {
+          this.$emit('selectedCountry', null);
+          this.selectedEntity = null;
+        }
         if (this.$root.$options.panEnabled && e.which === 1) {
           this.panning = !this.panning;
           this.wasMoving = false;

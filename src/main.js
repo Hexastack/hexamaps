@@ -93,7 +93,7 @@ Vue.use(plugins.entry, { editor: false });
 // Mode can be : "keep" or "clip"
 
 new Vue({
-  editor: false,
+  editor: true,
   zoomEnabled: true,
   panEnabled: true,
   mode: "keep",
