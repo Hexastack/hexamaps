@@ -104,7 +104,6 @@ export default function (plugin) {
           },
           [
             plugin.mapComponents
-              .filter((com) => com.isHtml)
               .map((child) => {
                 const mapComponents = child(
                   this.map.config,
@@ -115,7 +114,7 @@ export default function (plugin) {
                   },
                   this.map.data
                 );
-                return mapComponents.map((mapComponent) =>
+                return mapComponents.filter((com) => com.isHtml).map((mapComponent) =>
                   createElement(mapComponent.component, {
                     props: mapComponent.props,
                   })
@@ -143,7 +142,6 @@ export default function (plugin) {
               "defs",
               {},
               plugin.mapComponents
-                .filter((com) => com.isDef)
                 .map((child) => {
                   const mapDefs = child(
                     this.map.config,
@@ -154,7 +152,7 @@ export default function (plugin) {
                     },
                     this.map.data
                   );
-                  return mapDefs.map((mapDef) =>
+                  return mapDefs.filter((com) => com.isDef).map((mapDef) =>
                     createElement(mapDef.component, { props: mapDef.props })
                   );
                 })
@@ -227,7 +225,6 @@ export default function (plugin) {
                   })
                   : null,
               ].concat(plugin.mapComponents
-                .filter((com) => !com.isDef && !com.isHtml)
                 .map((child) => {
                   const mapComponents = child(
                     this.map.config,
@@ -238,7 +235,7 @@ export default function (plugin) {
                     },
                     this.map.data
                   );
-                  return mapComponents.map((mapComponent) =>
+                  return mapComponents.filter((com) => !com.isDef && !com.isHtml).map((mapComponent) =>
                     createElement(mapComponent.component, {
                       props: mapComponent.props,
                     })
